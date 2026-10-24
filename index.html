@@ -83,7 +83,7 @@
                 </div>
                 <input type="file" id="codeFileInput" accept=".c,.java,.py,.json,.txt" multiple onchange="handleCodeFileUpload(event)" class="hidden">
                 <p style="font-size: 11px; margin-top: 15px; background: #0f172a; color: #34d399; padding: 10px; border-radius: 8px;">
-                    <strong>Validation Guard:</strong> Active execution checking parses typed student code and compares actual output against expected criteria before unlocking record saves.
+                    <strong>Validation Guard:</strong> Registration logic enforces student credentials or Register Number verification (starts with 26SU / 26SP).
                 </p>
             </div>
 
@@ -121,14 +121,31 @@
     <div id="studentPortalView" class="hidden">
         <!-- AUTH MODAL -->
         <div id="studentAuthModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 50;">
-            <div class="comic-box" style="width: 350px; text-align: center;">
-                <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">STUDENT LOGIN</h2>
+            <div class="comic-box" style="width: 380px; text-align: center;">
+                <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">STUDENT LOGIN</h2>
+                <p style="font-size: 11px; color: #64748b; margin-bottom: 15px;">Register No. must start with <strong>26SU</strong> or <strong>26SP</strong></p>
+                
                 <form onsubmit="loginStudent(event)" class="flex flex-col gap-2" style="text-align: left;">
-                    <input type="text" id="sName" required placeholder="Full Name">
-                    <input type="text" id="sRollNo" placeholder="Roll Number">
-                    <input type="text" id="sRegNo" required placeholder="Register Number">
-                    <input type="email" id="sEmail" required placeholder="student@student.hindustanuniv.ac.in">
-                    <button type="submit" class="comic-btn" style="background: #34d399; margin-top: 10px;">START WORKSPACE</button>
+                    <div>
+                        <label style="font-size: 11px; font-weight: bold;">Full Name *</label>
+                        <input type="text" id="sName" required placeholder="Enter your full name">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: bold;">Register Number *</label>
+                        <input type="text" id="sRegNo" required placeholder="e.g. 26SU1001 or 26SP2001" style="text-transform: uppercase;">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: bold;">Roll Number (Optional)</label>
+                        <input type="text" id="sRollNo" placeholder="e.g. 21BCA001">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: bold;">Email Address (Optional)</label>
+                        <input type="email" id="sEmail" placeholder="student@student.hindustanuniv.ac.in">
+                    </div>
+                    
+                    <div id="loginErrorMsg" style="color: #dc2626; font-size: 11px; font-weight: bold; display: none; margin-top: 5px;"></div>
+
+                    <button type="submit" class="comic-btn" style="background: #34d399; margin-top: 10px;">START PRACTICE WORKSPACE</button>
                 </form>
             </div>
         </div>
@@ -269,9 +286,31 @@
             XLSX.writeFile(wb, "Student_Access_Logs.xlsx");
         }
 
+        // DYNAMIC STUDENT LOGIN VALIDATION (EITHER STUDENT EMAIL OR REG NO STARTING WITH 26SU/26SP)
         function loginStudent(e) {
             e.preventDefault();
-            student = { name: document.getElementById('sName').value, regNo: document.getElementById('sRegNo').value };
+            const name = document.getElementById('sName').value.trim();
+            const regNo = document.getElementById('sRegNo').value.trim().toUpperCase();
+            const email = document.getElementById('sEmail').value.trim().toLowerCase();
+            const errDiv = document.getElementById('loginErrorMsg');
+
+            errDiv.style.display = 'none';
+            errDiv.textContent = '';
+
+            // Check if Register Number starts with "26SU" or "26SP"
+            const isValidRegNo = regNo.startsWith('26SU') || regNo.startsWith('26SP');
+            
+            // Check if user provided valid student university email
+            const isValidEmail = email && email.endsWith('@student.hindustanuniv.ac.in');
+
+            // Validation Logic: Must pass either RegNo prefix rule OR official university email rule
+            if (!isValidRegNo && !isValidEmail) {
+                errDiv.style.display = 'block';
+                errDiv.textContent = 'Invalid credentials! Register Number must start with "26SU" or "26SP", or use a valid @student.hindustanuniv.ac.in email.';
+                return;
+            }
+
+            student = { name, regNo, email, rollNo: document.getElementById('sRollNo').value.trim() };
             
             let logs = JSON.parse(localStorage.getItem('codehero_access_logs') || '[]');
             logs.unshift({ timestamp: new Date().toLocaleTimeString(), name: student.name, regNo: student.regNo, action: "LOGGED_IN" });
