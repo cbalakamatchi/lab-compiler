@@ -73,7 +73,7 @@
 
         <!-- COURSE CONFIGURATION BAR -->
         <div class="comic-box" style="background: #f8fafc;">
-            <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 8px;"><i class="fa-solid fa-sliders"></i> COURSE CONFIGURATION (AUTOMATICALLY INJECTED INTO RECORD PDF)</h3>
+            <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 8px;"><i class="fa-solid fa-sliders"></i> COURSE CONFIGURATION</h3>
             <div class="grid grid-2 gap-2">
                 <div>
                     <label style="font-size: 11px; font-weight: bold;">Course Code</label>
@@ -98,7 +98,7 @@
                 </div>
                 <input type="file" id="codeFileInput" accept=".c,.java,.py,.json,.txt" multiple onchange="handleCodeFileUpload(event)" class="hidden">
                 <p style="font-size: 11px; margin-top: 15px; background: #0f172a; color: #34d399; padding: 10px; border-radius: 8px;">
-                    <strong>Validation Guard:</strong> Students must pass program execution matching target outputs before exercise completion date is stored into Index.
+                    <strong>Validation Guard:</strong> Registration logic checks for valid credentials or Register Number starting with <strong>26SU</strong> or <strong>26SP</strong>.
                 </p>
             </div>
 
@@ -207,8 +207,8 @@
     <div id="printableLabRecord" class="hidden"></div>
 
     <script>
-        // EMBEDDED EXTRACTED COLLEGE LOGO FROM PAGE 1 OF JAVA PROGRAMS.PDF
-        const COLLEGE_LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCADWAJkDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eH16fze4eLj5OXm5+jp6vHy8/T19vf4+fr/2gAMA40000";
+        // EMBEDDED EXTRACTED COLLEGE LOGO
+        const COLLEGE_LOGO_B64 = "https://i.ibb.co/68v8L54/hindustan-logo.png";
 
         let courseConfig = {
             code: "ACA31005",
@@ -429,6 +429,51 @@
             }
         }
 
+        // GENERATE PROCEDURE AUTOMATICALLY FROM CODE
+        function generateProcedureFromCode(code) {
+            let steps = ["1. Start the program execution."];
+            let stepNum = 2;
+
+            if (code.includes("Scanner") || code.includes("scanf") || code.includes("input(")) {
+                steps.push(`${stepNum++}. Initialize stream readers to parse user input.`);
+            }
+            if (code.includes("int ") || code.includes("double ") || code.includes("String ")) {
+                steps.push(`${stepNum++}. Declare and initialize operational variables.`);
+            }
+            if (code.includes("if") || code.includes("else")) {
+                steps.push(`${stepNum++}. Evaluate conditional statements and relational logic.`);
+            }
+            if (code.includes("for") || code.includes("while")) {
+                steps.push(`${stepNum++}. Execute loop structures to iterate over elements.`);
+            }
+            steps.push(`${stepNum++}. Display output results on standard output device.`);
+            steps.push(`${stepNum}. Stop execution.`);
+
+            return steps.join("\n");
+        }
+
+        // GENERATE FLOWCHART DIAGRAM AUTOMATICALLY FROM CODE
+        function generateFlowchartFromCode(code) {
+            let blocks = ["[START]"];
+            if (code.includes("int") || code.includes("double") || code.includes("String")) {
+                blocks.push("[Declare & Initialize Variables]");
+            }
+            if (code.includes("scanf") || code.includes("Scanner") || code.includes("input")) {
+                blocks.push("[Read Input Data]");
+            }
+            if (code.includes("if") || code.includes("else")) {
+                blocks.push("<Conditional Logic Check>");
+            }
+            if (code.includes("for") || code.includes("while")) {
+                blocks.push("<Iterate Loop Condition>");
+            }
+            blocks.push("[Process Program Operations]");
+            blocks.push("[Display Output Results]");
+            blocks.push("[END]");
+
+            return blocks.join("  ➔  ");
+        }
+
         // SAVE RECORD & RECORD EXECUTION DATE FOR INDEX PAGE
         function saveRecord() {
             if (!currentExecutionPassed) {
@@ -436,7 +481,7 @@
                 return;
             }
             const q = questionBank.c[activeStudentIndex];
-            const currentDate = new Date().toLocaleDateString('en-GB'); // DD/MM/YYYY
+            const currentDate = new Date().toLocaleDateString('en-GB');
 
             const entry = { 
                 title: q.title, 
@@ -453,7 +498,7 @@
             alert(`Exercise Saved! Recorded Completion Date: ${currentDate}`);
         }
 
-        // GENERATE OFFICIAL LAB RECORD DOCUMENT MATCHING JAVA PROGRAMS.PDF EXACTLY
+        // GENERATE OFFICIAL LAB RECORD DOCUMENT WITH EMBEDDED LOGO, AIM, PROCEDURE, FLOWCHART, CODE, OUTPUT & RESULT
         function generateLabRecordDocument() {
             if (savedRecords.length === 0) { alert("Save at least one completed exercise first!"); return; }
             const printDiv = document.getElementById('printableLabRecord');
@@ -461,10 +506,7 @@
             let html = `
                 <!-- PAGE 1: COVER PAGE -->
                 <div class="page-break" style="padding: 40px; text-align: center; font-family: 'Times New Roman', serif;">
-                    <img src="${COLLEGE_LOGO_B64}" style="max-height: 80px; margin-bottom: 15px;" alt="HITS Logo">
-                    <h1 style="font-size: 20pt; font-weight: bold; margin-bottom: 5px;">HINDUSTAN</h1>
-                    <h2 style="font-size: 13pt; font-weight: bold; margin-top: 0;">INSTITUTE OF TECHNOLOGY & SCIENCE</h2>
-                    <p style="font-size: 11pt; font-weight: bold; margin-top: 0;">(DEEMED TO BE UNIVERSITY)</p>
+                    <img src="${COLLEGE_LOGO_B64}" style="max-width: 320px; margin-bottom: 20px;" alt="Hindustan Logo">
                     
                     <p style="font-size: 13pt; font-weight: bold; margin-top: 25px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
                     <p style="font-size: 13pt; font-weight: bold; margin-top: 5px;">BACHELOR OF COMPUTER APPLICATIONS</p>
@@ -483,7 +525,7 @@
                 <!-- PAGE 2: BONAFIDE CERTIFICATE PAGE -->
                 <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif;">
                     <div style="text-align: center;">
-                        <img src="${COLLEGE_LOGO_B64}" style="max-height: 70px; margin-bottom: 15px;" alt="HITS Logo">
+                        <img src="${COLLEGE_LOGO_B64}" style="max-width: 280px; margin-bottom: 20px;" alt="Hindustan Logo">
                         <p style="font-size: 13pt; font-weight: bold;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
                         <p style="font-size: 13pt; font-weight: bold; margin-top: 5px;">BACHELOR OF COMPUTER APPLICATIONS</p>
                         <p style="font-size: 12pt; font-weight: bold; margin-top: 5px;">(SEMESTER – II)</p>
@@ -578,22 +620,33 @@
                 </div>
             `;
 
-            // PAGE 5+: INDIVIDUAL PROGRAM EXPERIMENT PAGES
+            // PAGE 5+: INDIVIDUAL EXERCISE PAGES WITH AIM -> PROCEDURE -> FLOWCHART -> CODE -> OUTPUT -> RESULT
             savedRecords.forEach((rec, i) => {
+                const autoProcedure = generateProcedureFromCode(rec.code);
+                const autoFlowchart = generateFlowchartFromCode(rec.code);
+
                 html += `
                     <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif; position: relative;">
                         <h3 style="font-size: 13pt; font-weight: bold;">${i+1}. ${rec.title}</h3>
                         
-                        <p style="font-weight: bold; margin-top: 15px;">Aim:</p>
-                        <p>To write a program that implements ${rec.title.toLowerCase()} and displays output.</p>
+                        <p style="font-weight: bold; margin-top: 12px;">Aim:</p>
+                        <p style="margin-bottom: 10px;">To write a program that implements ${rec.title.toLowerCase()} and displays output.</p>
                         
-                        <p style="font-weight: bold; margin-top: 15px;">Coding:</p>
-                        <pre style="background: #f8f9fa; padding: 10px; font-size: 9pt; border: 1px solid #ccc; white-space: pre-wrap; font-family: monospace;">${rec.code}</pre>
+                        <p style="font-weight: bold; margin-top: 12px;">Procedure / Algorithm:</p>
+                        <pre style="font-family: 'Times New Roman', serif; white-space: pre-wrap; font-size: 10pt; line-height: 1.5; margin-bottom: 10px;">${autoProcedure}</pre>
                         
-                        <p style="font-weight: bold; margin-top: 15px;">Output:</p>
-                        <pre style="background: #e8f5e9; padding: 10px; font-size: 9pt; border: 1px solid #81c784; white-space: pre-wrap; font-family: monospace;">${rec.output}</pre>
+                        <p style="font-weight: bold; margin-top: 12px;">Flowchart:</p>
+                        <div style="background: #f1f5f9; padding: 10px; border: 1px solid #cbd5e1; font-family: monospace; font-size: 9pt; margin-bottom: 15px; border-radius: 4px;">
+                            ${autoFlowchart}
+                        </div>
+
+                        <p style="font-weight: bold; margin-top: 12px;">Coding:</p>
+                        <pre style="background: #f8f9fa; padding: 10px; font-size: 9pt; border: 1px solid #ccc; white-space: pre-wrap; font-family: monospace; margin-bottom: 10px;">${rec.code}</pre>
                         
-                        <p style="font-weight: bold; margin-top: 15px;">Result:</p>
+                        <p style="font-weight: bold; margin-top: 12px;">Output:</p>
+                        <pre style="background: #e8f5e9; padding: 10px; font-size: 9pt; border: 1px solid #81c784; white-space: pre-wrap; font-family: monospace; margin-bottom: 10px;">${rec.output}</pre>
+                        
+                        <p style="font-weight: bold; margin-top: 12px;">Result:</p>
                         <p>Thus, the program executed successfully.</p>
                         
                         <div class="record-footer">Student Name: ${student.name} | Register No: ${student.regNo} | Completed: ${rec.date}</div>
