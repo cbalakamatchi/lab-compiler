@@ -50,7 +50,7 @@
         <header class="comic-box" style="background: #9333ea; color: white; display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <h1 style="font-size: 24px; font-weight: bold;"><i class="fa-solid fa-file-code"></i> FACULTY ADMIN PORTAL</h1>
-                <p style="font-size: 12px; opacity: 0.9;">Upload Program Files (.c, .java, .py), Share Student Link & Export Access Excel</p>
+                <p style="font-size: 12px; opacity: 0.9;">Configure Course Details, Upload Programs & Share Student Practice Links</p>
             </div>
             <div class="flex gap-2">
                 <button id="genLinkBtn" onclick="generateAndCopyStudentLink()" class="comic-btn" style="background: #34d399; color: black;">
@@ -71,6 +71,21 @@
             </div>
         </div>
 
+        <!-- COURSE CONFIGURATION BAR -->
+        <div class="comic-box" style="background: #f8fafc;">
+            <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 8px;"><i class="fa-solid fa-sliders"></i> COURSE CONFIGURATION (AUTOMATICALLY INJECTED INTO RECORD PDF)</h3>
+            <div class="grid grid-2 gap-2">
+                <div>
+                    <label style="font-size: 11px; font-weight: bold;">Course Code</label>
+                    <input type="text" id="adminCourseCode" value="ACA31005" onchange="updateCourseConfig()" placeholder="e.g. ACA31005">
+                </div>
+                <div>
+                    <label style="font-size: 11px; font-weight: bold;">Course Name</label>
+                    <input type="text" id="adminCourseName" value="OBJECT ORIENTED PROGRAMMING" onchange="updateCourseConfig()" placeholder="e.g. OBJECT ORIENTED PROGRAMMING">
+                </div>
+            </div>
+        </div>
+
         <!-- MAIN WORKSPACE GRID -->
         <div class="grid grid-admin">
             <!-- LEFT: UPLOAD SECTION -->
@@ -83,7 +98,7 @@
                 </div>
                 <input type="file" id="codeFileInput" accept=".c,.java,.py,.json,.txt" multiple onchange="handleCodeFileUpload(event)" class="hidden">
                 <p style="font-size: 11px; margin-top: 15px; background: #0f172a; color: #34d399; padding: 10px; border-radius: 8px;">
-                    <strong>Validation Guard:</strong> Registration logic enforces student credentials or Register Number verification (starts with 26SU / 26SP).
+                    <strong>Validation Guard:</strong> Students must pass program execution matching target outputs before exercise completion date is stored into Index.
                 </p>
             </div>
 
@@ -192,6 +207,14 @@
     <div id="printableLabRecord" class="hidden"></div>
 
     <script>
+        // EMBEDDED EXTRACTED COLLEGE LOGO FROM PAGE 1 OF JAVA PROGRAMS.PDF
+        const COLLEGE_LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCADWAJkDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eH16fze4eLj5OXm5+jp6vHy8/T19vf4+fr/2gAMA40000";
+
+        let courseConfig = {
+            code: "ACA31005",
+            name: "OBJECT ORIENTED PROGRAMMING"
+        };
+
         let questionBank = {
             c: [
                 { title: "Reads an integer output and display it", code: `#include <stdio.h>\nint main() {\n    int number = 10;\n    printf("You entered: %d", number);\n    return 0;\n}`, sampleInput: "10", expectedOutput: "You entered: 10" },
@@ -208,7 +231,10 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const dataParam = urlParams.get('data');
                 if (dataParam) {
-                    questionBank = JSON.parse(decodeURIComponent(atob(dataParam)));
+                    const parsed = JSON.parse(decodeURIComponent(atob(dataParam)));
+                    questionBank = parsed.questionBank || parsed;
+                    if (parsed.courseConfig) courseConfig = parsed.courseConfig;
+                    
                     document.getElementById('adminPortalView').classList.add('hidden');
                     document.getElementById('studentPortalView').classList.remove('hidden');
                     return;
@@ -220,6 +246,11 @@
             renderAdminQuestions();
             renderStudentLogsTable();
         };
+
+        function updateCourseConfig() {
+            courseConfig.code = document.getElementById('adminCourseCode').value.trim() || "ACA31005";
+            courseConfig.name = document.getElementById('adminCourseName').value.trim() || "OBJECT ORIENTED PROGRAMMING";
+        }
 
         function triggerCodeFileUpload() { document.getElementById('codeFileInput').click(); }
         function handleCodeFileUpload(e) {
@@ -256,12 +287,14 @@
         }
 
         async function generateAndCopyStudentLink() {
-            const encoded = btoa(encodeURIComponent(JSON.stringify(questionBank)));
+            updateCourseConfig();
+            const payload = { questionBank, courseConfig };
+            const encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
             const url = `${window.location.origin}${window.location.pathname}?data=${encoded}`;
             document.getElementById('generatedStudentUrlInput').value = url;
             document.getElementById('generatedLinkBanner').classList.remove('hidden');
             navigator.clipboard.writeText(url);
-            alert("Student link generated and copied!");
+            alert("Student practice URL generated and copied to clipboard!");
         }
 
         function copyGeneratedUrl() {
@@ -286,7 +319,6 @@
             XLSX.writeFile(wb, "Student_Access_Logs.xlsx");
         }
 
-        // DYNAMIC STUDENT LOGIN VALIDATION (EITHER STUDENT EMAIL OR REG NO STARTING WITH 26SU/26SP)
         function loginStudent(e) {
             e.preventDefault();
             const name = document.getElementById('sName').value.trim();
@@ -297,13 +329,9 @@
             errDiv.style.display = 'none';
             errDiv.textContent = '';
 
-            // Check if Register Number starts with "26SU" or "26SP"
             const isValidRegNo = regNo.startsWith('26SU') || regNo.startsWith('26SP');
-            
-            // Check if user provided valid student university email
             const isValidEmail = email && email.endsWith('@student.hindustanuniv.ac.in');
 
-            // Validation Logic: Must pass either RegNo prefix rule OR official university email rule
             if (!isValidRegNo && !isValidEmail) {
                 errDiv.style.display = 'block';
                 errDiv.textContent = 'Invalid credentials! Register Number must start with "26SU" or "26SP", or use a valid @student.hindustanuniv.ac.in email.';
@@ -327,8 +355,8 @@
             const container = document.getElementById('studentQuestionList');
             container.innerHTML = "";
             questionBank.c.forEach((q, i) => {
-                const isSaved = savedRecords.some(r => r.title === q.title);
-                container.innerHTML += `<button onclick="activeStudentIndex=${i};renderActiveStudentQuestion();" class="comic-btn" style="text-align: left; font-size: 12px; background:${i === activeStudentIndex ? '#fef08a' : '#fff'};">${i+1}. ${q.title} ${isSaved ? '✅' : ''}</button>`;
+                const saved = savedRecords.find(r => r.title === q.title);
+                container.innerHTML += `<button onclick="activeStudentIndex=${i};renderActiveStudentQuestion();" class="comic-btn" style="text-align: left; font-size: 12px; background:${i === activeStudentIndex ? '#fef08a' : '#fff'};">${i+1}. ${q.title} ${saved ? `(Completed: ${saved.date}) ✅` : ''}</button>`;
             });
         }
 
@@ -344,7 +372,6 @@
             currentExecutionPassed = false;
         }
 
-        // COMPILER INTERPRETER & REAL-TIME OUTPUT VALIDATOR
         async function runCode() {
             const code = document.getElementById('codeEditor').value.trim();
             const q = questionBank.c[activeStudentIndex];
@@ -360,7 +387,6 @@
 
             consoleOut.textContent = "Executing code and checking output requirements...";
 
-            // Client-Side Execution Engine Logic
             let extractedOutputs = [];
             const printRegex = /(?:printf|System\.out\.println|print)\s*\(\s*"([^"]+)"/gi;
             let match;
@@ -369,7 +395,6 @@
                 if (text) extractedOutputs.push(text);
             }
 
-            // Remote Execution Backup
             let actualOutput = extractedOutputs.join(" ");
             if (!actualOutput) {
                 try {
@@ -385,13 +410,12 @@
                 } catch(e) {}
             }
 
-            if (!actualOutput) actualOutput = code; // Text match fallback
+            if (!actualOutput) actualOutput = code;
 
             validatedActualOutput = actualOutput;
             const target = q.expectedOutput.trim().toLowerCase();
             const cleanActual = actualOutput.trim().toLowerCase();
 
-            // Strict Validation Check
             if (cleanActual.includes(target) || target.includes(cleanActual)) {
                 consoleOut.textContent = `[TERMINAL OUTPUT]:\n${actualOutput}\n\n✅ TEST CASE PASSED!\nYour code successfully executed and matched expected target output. You can now save this exercise.`;
                 valTag.textContent = "PASSED";
@@ -405,84 +429,174 @@
             }
         }
 
+        // SAVE RECORD & RECORD EXECUTION DATE FOR INDEX PAGE
         function saveRecord() {
             if (!currentExecutionPassed) {
                 alert("Validation Failed! You must click Run Program and achieve a PASSED test case before saving.");
                 return;
             }
             const q = questionBank.c[activeStudentIndex];
-            const entry = { title: q.title, code: document.getElementById('codeEditor').value, output: validatedActualOutput || q.expectedOutput, date: new Date().toLocaleDateString('en-GB') };
+            const currentDate = new Date().toLocaleDateString('en-GB'); // DD/MM/YYYY
+
+            const entry = { 
+                title: q.title, 
+                code: document.getElementById('codeEditor').value, 
+                output: validatedActualOutput || q.expectedOutput, 
+                date: currentDate 
+            };
             
             const idx = savedRecords.findIndex(r => r.title === q.title);
             if (idx >= 0) savedRecords[idx] = entry;
             else savedRecords.push(entry);
 
             renderStudentQuestionList();
-            alert("Exercise Output Validated & Saved To Record!");
+            alert(`Exercise Saved! Recorded Completion Date: ${currentDate}`);
         }
 
-        // GENERATE PDF RECORD MATCHING JAVA PROGRAMS.PDF
+        // GENERATE OFFICIAL LAB RECORD DOCUMENT MATCHING JAVA PROGRAMS.PDF EXACTLY
         function generateLabRecordDocument() {
             if (savedRecords.length === 0) { alert("Save at least one completed exercise first!"); return; }
             const printDiv = document.getElementById('printableLabRecord');
             
             let html = `
-                <!-- COVER PAGE -->
+                <!-- PAGE 1: COVER PAGE -->
                 <div class="page-break" style="padding: 40px; text-align: center; font-family: 'Times New Roman', serif;">
-                    <h1 style="font-size: 22pt; font-weight: bold;">HINDUSTAN</h1>
-                    <h2 style="font-size: 14pt; font-weight: bold;">INSTITUTE OF TECHNOLOGY & SCIENCE</h2>
-                    <p style="font-size: 11pt; font-weight: bold;">(DEEMED TO BE UNIVERSITY)</p>
+                    <img src="${COLLEGE_LOGO_B64}" style="max-height: 80px; margin-bottom: 15px;" alt="HITS Logo">
+                    <h1 style="font-size: 20pt; font-weight: bold; margin-bottom: 5px;">HINDUSTAN</h1>
+                    <h2 style="font-size: 13pt; font-weight: bold; margin-top: 0;">INSTITUTE OF TECHNOLOGY & SCIENCE</h2>
+                    <p style="font-size: 11pt; font-weight: bold; margin-top: 0;">(DEEMED TO BE UNIVERSITY)</p>
+                    
                     <p style="font-size: 13pt; font-weight: bold; margin-top: 25px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
                     <p style="font-size: 13pt; font-weight: bold; margin-top: 5px;">BACHELOR OF COMPUTER APPLICATIONS</p>
 
+                    <p style="font-size: 12pt; font-weight: bold; margin-top: 25px;">(SEMESTER – II)</p>
+                    <h2 style="font-size: 15pt; font-weight: bold; margin-top: 15px;">${courseConfig.code} – ${courseConfig.name}</h2>
+                    <p style="font-size: 14pt; font-weight: bold; margin-top: 10px;">Integrated Lab Record</p>
+
                     <div style="border: 2px solid #000; padding: 20px; margin: 40px 0; text-align: left; line-height: 2; font-size: 12pt; font-weight: bold;">
                         <p style="margin:0;">Name : ${student.name}</p>
+                        <p style="margin:0;">Roll No : ${student.rollNo || ''}</p>
                         <p style="margin:0;">Register No : ${student.regNo}</p>
                     </div>
-
-                    <p style="font-size: 12pt; font-weight: bold;">(SEMESTER - II)</p>
-                    <h2 style="font-size: 16pt; font-weight: bold; margin-top: 15px;">ACA31005 - OBJECT ORIENTED PROGRAMMING</h2>
-                    <p style="font-size: 14pt; font-weight: bold; margin-top: 10px;">Integrated Lab Record</p>
                 </div>
 
-                <!-- BONAFIDE PAGE -->
+                <!-- PAGE 2: BONAFIDE CERTIFICATE PAGE -->
                 <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif;">
                     <div style="text-align: center;">
-                        <h1 style="font-size: 22pt; font-weight: bold;">HINDUSTAN</h1>
-                        <h2 style="font-size: 14pt; font-weight: bold;">INSTITUTE OF TECHNOLOGY & SCIENCE</h2>
-                        <p style="font-size: 11pt; font-weight: bold;">(DEEMED TO BE UNIVERSITY)</p>
-                        <p style="font-size: 13pt; font-weight: bold; margin-top: 25px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
-                        <h2 style="font-size: 18pt; font-weight: bold; text-decoration: underline; margin-top: 30px; margin-bottom: 40px;">Bonafide Certificate</h2>
+                        <img src="${COLLEGE_LOGO_B64}" style="max-height: 70px; margin-bottom: 15px;" alt="HITS Logo">
+                        <p style="font-size: 13pt; font-weight: bold;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
+                        <p style="font-size: 13pt; font-weight: bold; margin-top: 5px;">BACHELOR OF COMPUTER APPLICATIONS</p>
+                        <p style="font-size: 12pt; font-weight: bold; margin-top: 5px;">(SEMESTER – II)</p>
+
+                        <h2 style="font-size: 18pt; font-weight: bold; margin-top: 30px; margin-bottom: 40px;">Bonafide Certificate</h2>
                     </div>
 
                     <p style="font-size: 12pt; line-height: 2.2; text-align: justify; margin-top: 30px;">
                         This is a certified Bonafide record of work done by <strong>${student.name}</strong> 
                         (Register Number: <strong>${student.regNo}</strong>) of <strong>BCA</strong> class, 
                         submitted for the End Semester Practical Examination held on ____________________ 
-                        in <strong>ACA31005 - OBJECT ORIENTED PROGRAMMING Laboratory</strong> during the academic year <strong>2024-2025</strong>.
+                        in <strong>${courseConfig.code} – ${courseConfig.name} Laboratory</strong> during the academic year <strong>2024 – 2025</strong>.
                     </p>
                     
-                    <div style="margin-top: 120px; display: flex; justify-content: space-between; text-align: center; font-weight: bold; font-size: 11pt;">
+                    <div style="margin-top: 140px; display: flex; justify-content: space-between; text-align: center; font-weight: bold; font-size: 11pt;">
                         <div><p>Staff In-Charge</p></div>
                         <div><p>Internal Examiner</p></div>
                         <div><p>External Examiner</p></div>
                     </div>
                 </div>
+
+                <!-- PAGE 3: AUTOMATIC INDEX PAGE -->
+                <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif;">
+                    <h2 style="text-align: center; font-size: 13pt; font-weight: bold; margin-bottom: 20px;">
+                        ${courseConfig.name} – INTEGRATED LAB RECORD | INDEX
+                    </h2>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10pt;" border="1">
+                        <thead>
+                            <tr style="background-color: #f2f2f2;">
+                                <th style="padding: 8px; width: 8%;">S.NO</th>
+                                <th style="padding: 8px; width: 18%;">DATE</th>
+                                <th style="padding: 8px;">NAME OF THE EXPERIMENT</th>
+                                <th style="padding: 8px; width: 12%;">PAGE No.</th>
+                                <th style="padding: 8px; width: 20%;">SIGNATURE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
             `;
 
             savedRecords.forEach((rec, i) => {
                 html += `
-                    <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif;">
+                    <tr>
+                        <td style="padding: 8px; text-align: center;">${i + 1}</td>
+                        <td style="padding: 8px; text-align: center;">${rec.date}</td>
+                        <td style="padding: 8px;">${rec.title}</td>
+                        <td style="padding: 8px; text-align: center;">${i + 5}</td>
+                        <td style="padding: 8px;"></td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- PAGE 4: STAFF EVALUATION SHEET -->
+                <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif;">
+                    <h2 style="text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px;">STAFF EVALUATION SHEET</h2>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt;" border="1">
+                        <thead>
+                            <tr style="background-color: #f2f2f2;">
+                                <th style="padding: 6px;">S.NO</th>
+                                <th style="padding: 6px;">PROGRAM TITLE</th>
+                                <th style="padding: 6px;">AIM (2)</th>
+                                <th style="padding: 6px;">ALGORITHM (2)</th>
+                                <th style="padding: 6px;">PROGRAM (4)</th>
+                                <th style="padding: 6px;">OUTPUT (2)</th>
+                                <th style="padding: 6px;">TOTAL (10)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            savedRecords.forEach((rec, i) => {
+                html += `
+                    <tr>
+                        <td style="padding: 8px; text-align: center;">${i + 1}</td>
+                        <td style="padding: 8px;">${rec.title}</td>
+                        <td style="padding: 8px;"></td>
+                        <td style="padding: 8px;"></td>
+                        <td style="padding: 8px;"></td>
+                        <td style="padding: 8px;"></td>
+                        <td style="padding: 8px;"></td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            // PAGE 5+: INDIVIDUAL PROGRAM EXPERIMENT PAGES
+            savedRecords.forEach((rec, i) => {
+                html += `
+                    <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif; position: relative;">
                         <h3 style="font-size: 13pt; font-weight: bold;">${i+1}. ${rec.title}</h3>
-                        <p style="font-weight: bold; margin-top: 10px;">Aim:</p>
+                        
+                        <p style="font-weight: bold; margin-top: 15px;">Aim:</p>
                         <p>To write a program that implements ${rec.title.toLowerCase()} and displays output.</p>
-                        <p style="font-weight: bold; margin-top: 10px;">Coding:</p>
-                        <pre style="background: #f8f9fa; padding: 10px; font-size: 9pt; border: 1px solid #ccc; white-space: pre-wrap;">${rec.code}</pre>
-                        <p style="font-weight: bold; margin-top: 10px;">Output:</p>
-                        <pre style="background: #e8f5e9; padding: 10px; font-size: 9pt; border: 1px solid #81c784; white-space: pre-wrap;">${rec.output}</pre>
-                        <p style="font-weight: bold; margin-top: 10px;">Result:</p>
+                        
+                        <p style="font-weight: bold; margin-top: 15px;">Coding:</p>
+                        <pre style="background: #f8f9fa; padding: 10px; font-size: 9pt; border: 1px solid #ccc; white-space: pre-wrap; font-family: monospace;">${rec.code}</pre>
+                        
+                        <p style="font-weight: bold; margin-top: 15px;">Output:</p>
+                        <pre style="background: #e8f5e9; padding: 10px; font-size: 9pt; border: 1px solid #81c784; white-space: pre-wrap; font-family: monospace;">${rec.output}</pre>
+                        
+                        <p style="font-weight: bold; margin-top: 15px;">Result:</p>
                         <p>Thus, the program executed successfully.</p>
-                        <div class="record-footer">Student Name: ${student.name} | Reg No: ${student.regNo}</div>
+                        
+                        <div class="record-footer">Student Name: ${student.name} | Register No: ${student.regNo} | Completed: ${rec.date}</div>
                     </div>
                 `;
             });
