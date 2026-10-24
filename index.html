@@ -220,8 +220,11 @@
             <div class="grid grid-admin">
                 <!-- EXERCISES LIST -->
                 <div class="comic-box">
-                    <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">ASSIGNED EXERCISES</h3>
-                    <div id="studentQuestionList" class="flex flex-col gap-2"></div>
+                    <div class="flex justify-between items-center" style="margin-bottom: 10px;">
+                        <h3 style="font-size: 14px; font-weight: bold;">ASSIGNED EXERCISES</h3>
+                        <span id="studentExerciseCount" style="background: #e9d5ff; padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">0 Exercises</span>
+                    </div>
+                    <div id="studentQuestionList" class="flex flex-col gap-2" style="max-height: 400px; overflow-y: auto;"></div>
                 </div>
 
                 <!-- COMPILER EDITOR -->
@@ -249,7 +252,7 @@
     <div id="printableLabRecord" class="hidden"></div>
 
     <script>
-        // CLEAN VECTOR SVG COLLEGE LOGO (PREVENTS SCRIPT PARSING SYNTAX ERRORS)
+        // VECTOR SVG LOGO DATA URI
         const COLLEGE_LOGO_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 120' width='600' height='120'><rect width='100%' height='100%' fill='none'/><g transform='translate(10,10)'><circle cx='50' cy='50' r='45' fill='%23f97316'/><circle cx='50' cy='50' r='30' fill='%23059669'/><text x='50' y='56' font-size='12' font-family='Arial, sans-serif' font-weight='bold' fill='white' text-anchor='middle'>HITS</text></g><text x='130' y='52' font-size='32' font-family='Arial, sans-serif' font-weight='900' fill='%23000000'>HINDUSTAN</text><text x='130' y='75' font-size='14' font-family='Arial, sans-serif' font-weight='bold' fill='%231f2937'>INSTITUTE OF TECHNOLOGY %26 SCIENCE</text><text x='130' y='95' font-size='12' font-family='Arial, sans-serif' font-weight='bold' fill='%234b5563'>(DEEMED TO BE UNIVERSITY)</text></svg>";
 
         let courseConfig = {
@@ -309,13 +312,29 @@
                 const reader = new FileReader();
                 reader.onload = function(evt) {
                     const content = evt.target.result;
-                    questionBank.c.push({
-                        title: file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
-                        code: content,
-                        sampleInput: "None",
-                        expectedOutput: extractOutputPattern(content)
-                    });
+                    
+                    // IF JSON ARRAY OR OBJECT
+                    if (file.name.endsWith('.json')) {
+                        try {
+                            const parsed = JSON.parse(content);
+                            if (Array.isArray(parsed)) {
+                                parsed.forEach(p => questionBank.c.push(p));
+                            } else if (parsed.questionBank) {
+                                questionBank = parsed.questionBank;
+                            }
+                        } catch(err) {}
+                    } else {
+                        // INDIVIDUAL C / JAVA / PYTHON FILE
+                        questionBank.c.push({
+                            title: file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
+                            code: content,
+                            sampleInput: "None",
+                            expectedOutput: extractOutputPattern(content)
+                        });
+                    }
+                    
                     renderAdminQuestions();
+                    renderStudentQuestionList();
                 };
                 reader.readAsText(file);
             });
@@ -336,7 +355,6 @@
             document.getElementById('loadedStatsBadge').textContent = `${questionBank.c.length} Programs`;
         }
 
-        // GENERATE SAFE URL FOR STUDENT ACCESS
         function generateAndCopyStudentLink() {
             updateCourseConfig();
             const payload = { questionBank, courseConfig };
@@ -411,16 +429,36 @@
             document.getElementById('studentAuthModal').classList.add('hidden');
             document.getElementById('studentMainContent').classList.remove('hidden');
             document.getElementById('displayStudentName').textContent = `${student.name} (${student.regNo})`;
+            
+            // RENDER ALL UPLOADED PROGRAMS ON STUDENT PAGE
             renderStudentQuestionList();
             renderActiveStudentQuestion();
         }
 
+        // RENDER THE FULL LIST OF UPLOADED PROGRAMS FOR STUDENTS
         function renderStudentQuestionList() {
             const container = document.getElementById('studentQuestionList');
+            const countBadge = document.getElementById('studentExerciseCount');
+            
+            if (!container) return;
             container.innerHTML = "";
-            questionBank.c.forEach((q, i) => {
+
+            const programs = questionBank.c || [];
+            if (countBadge) countBadge.textContent = `${programs.length} Exercises`;
+
+            if (programs.length === 0) {
+                container.innerHTML = `<p style="font-size: 12px; color: #64748b;">No exercises uploaded yet.</p>`;
+                return;
+            }
+
+            programs.forEach((q, i) => {
                 const saved = savedRecords.find(r => r.title === q.title);
-                container.innerHTML += `<button onclick="activeStudentIndex=${i};renderActiveStudentQuestion();" class="comic-btn" style="text-align: left; font-size: 12px; background:${i === activeStudentIndex ? '#fef08a' : '#fff'};">${i+1}. ${q.title} ${saved ? `(Completed: ${saved.date}) ✅` : ''}</button>`;
+                container.innerHTML += `
+                    <button onclick="activeStudentIndex=${i};renderActiveStudentQuestion();" class="comic-btn" style="text-align: left; font-size: 12px; width: 100%; background:${i === activeStudentIndex ? '#fef08a' : '#fff'};">
+                        <strong>${i+1}. ${q.title}</strong>
+                        ${saved ? `<br><span style="color:#059669; font-size:10px;">(Completed: ${saved.date}) ✅</span>` : ''}
+                    </button>
+                `;
             });
         }
 
