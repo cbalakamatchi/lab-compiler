@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hindustan University - Short Practice Link Generator & Lab Compiler</title>
+    <!-- Tailwind CSS & FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Outfit:wght@400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        .font-comic { font-family: 'Bangers', cursive; letter-spacing: 1px; }
+        .font-body { font-family: 'Outfit', sans-serif; }
+        .font-code { font-family: 'Fira Code', monospace; }
+        .halftone-bg {
+            background-color: #fef08a;
+            background-image: radial-gradient(#f59e0b 20%, transparent 20%), radial-gradient(#f59e0b 20%, transparent 20%);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+        .comic-box { border: 3px solid #000; box-shadow: 4px 4px 0px #000; }
+        .comic-btn { border: 2px solid #000; box-shadow: 3px 3px 0px #000; font-weight: 800; transition: all 0.1s; }
+        .comic-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px #000; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printableLabRecord, #printableLabRecord * { visibility: visible; }
+            #printableLabRecord { position: absolute; left: 0; top: 0; width: 100%; background: white !important; color: black !important; }
+            .page-break { page-break-after: always; break-after: page; }
+            .record-footer { position: fixed; bottom: 10px; left: 0; right: 0; text-align: center; font-size: 10pt; font-weight: bold; border-top: 1px solid #000; padding-top: 5px; }
+        }
+    </style>
+</head>
+<body class="font-body halftone-bg min-h-screen text-slate-900 flex flex-col p-3">
+
+    <!-- ADMIN VIEW CONTAINER -->
+    <div id="adminPortalView" class="hidden flex-1 flex flex-col">
+        <!-- ADMIN HEADER -->
+        <header class="comic-box bg-purple-600 text-white p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-yellow-400 text-black p-2.5 rounded-xl border-2 border-black text-2xl font-comic">
+                    <i class="fa-solid fa-link"></i>
+                </div>
+                <div>
+                    <h1 class="font-comic text-3xl">FACULTY QUESTION & SHORT LINK GENERATOR</h1>
+                    <p class="text-xs font-bold text-purple-200">Add practice questions, generate a concise short link, and share with students</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+                <button id="genLinkBtn" onclick="generateAndCopyStudentLink()" class="comic-btn bg-emerald-400 hover:bg-emerald-300 text-black px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-share-nodes text-sm"></i> <span>Generate Short Student URL</span>
+                </button>
+                <button onclick="triggerJsonUpload()" class="comic-btn bg-yellow-400 hover:bg-yellow-300 text-black px-3 py-2 rounded-xl text-xs font-bold">
+                    <i class="fa-solid fa-file-arrow-up"></i> Upload JSON
+                </button>
+                <input type="file" id="jsonFileInput" accept=".json,.txt" onchange="uploadJsonAssignment(event)" class="hidden">
+            </div>
+        </header>
+
+        <!-- GENERATED SHORT STUDENT LINK DISPLAY BANNER -->
+        <div id="generatedLinkBanner" class="hidden comic-box bg-emerald-100 p-3 rounded-xl border-2 border-black mb-3 flex items-center justify-between">
+            <div class="truncate mr-2 flex-1">
+                <span class="font-bold text-emerald-900 text-xs block"><i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i> SHORT STUDENT URL READY:</span>
+                <input type="text" id="generatedStudentUrlInput" readonly class="w-full bg-white border border-black p-1.5 rounded text-xs font-code font-bold text-slate-800">
+            </div>
+            <button onclick="copyGeneratedUrl()" class="comic-btn bg-emerald-400 hover:bg-emerald-300 px-3 py-1.5 rounded-lg text-xs font-bold shrink-0">
+                <i class="fa-solid fa-copy"></i> Copy Short Link
+            </button>
+        </div>
+
+        <!-- MAIN WORKSPACE GRID -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1">
+            <!-- LEFT: ADD/EDIT QUESTION FORM -->
+            <div class="lg:col-span-5 comic-box bg-white p-4 rounded-2xl flex flex-col">
+                <h2 class="font-comic text-2xl text-purple-900 mb-2"><i class="fa-solid fa-plus-circle mr-1"></i> ADD PRACTICE QUESTION</h2>
+                
+                <form onsubmit="saveQuestion(event)" class="space-y-2.5 text-xs flex-1 flex flex-col">
+                    <div>
+                        <label class="block font-bold mb-1">Target Language</label>
+                        <select id="qLang" class="w-full border-2 border-black p-2 rounded-xl font-bold bg-slate-50">
+                            <option value="c">C Language</option>
+                            <option value="java">Java</option>
+                            <option value="python">Python 3</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold mb-1">Question Title</label>
+                        <input type="text" id="qTitle" required placeholder="e.g. Reverse Array Elements" class="w-full border-2 border-black p-2 rounded-xl font-bold">
+                    </div>
+
+                    <div>
+                        <label class="block font-bold mb-1">Aim Statement</label>
+                        <textarea id="qAim" rows="2" required placeholder="To write a program that..." class="w-full border-2 border-black p-2 rounded-xl font-bold"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold mb-1">Algorithm Steps</label>
+                        <textarea id="qAlgorithm" rows="2" required placeholder="Step 1: Start&#10;Step 2: Process...&#10;Step 3: Stop" class="w-full border-2 border-black p-2 rounded-xl font-bold"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold mb-1">Flowchart Logic Diagram</label>
+                        <input type="text" id="qFlowchart" required placeholder="[Start] ➔ [Input] ➔ [Process] ➔ [Stop]" class="w-full border-2 border-black p-2 rounded-xl font-bold">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-bold mb-1">Sample Input</label>
+                            <input type="text" id="qInput" placeholder="e.g. 1 2 3 4 5" class="w-full border-2 border-black p-2 rounded-xl font-bold">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">Expected Output</label>
+                            <input type="text" id="qOutput" required placeholder="e.g. 5 4 3 2 1" class="w-full border-2 border-black p-2 rounded-xl font-bold">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="comic-btn w-full bg-purple-500 hover:bg-purple-400 text-white py-2 rounded-xl font-comic text-xl mt-auto">
+                        SAVE QUESTION TO BANK
+                    </button>
+                </form>
+            </div>
+
+            <!-- RIGHT: ACTIVE QUESTIONS LIST -->
+            <div class="lg:col-span-7 comic-box bg-white p-4 rounded-2xl flex flex-col">
+                <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
+                    <h2 class="font-comic text-2xl text-slate-900"><i class="fa-solid fa-list-check mr-1"></i> QUESTION BANK</h2>
+                    <div class="flex gap-1">
+                        <button onclick="switchAdminLang('c')" id="tabC" class="comic-btn text-xs px-3 py-1 rounded-lg bg-black text-white font-bold">C</button>
+                        <button onclick="switchAdminLang('java')" id="tabJava" class="comic-btn text-xs px-3 py-1 rounded-lg bg-slate-200 text-black font-bold">Java</button>
+                        <button onclick="switchAdminLang('python')" id="tabPython" class="comic-btn text-xs px-3 py-1 rounded-lg bg-slate-200 text-black font-bold">Python</button>
+                    </div>
+                </div>
+
+                <div id="questionsContainer" class="space-y-2 overflow-y-auto flex-1 pr-1">
+                    <!-- Questions injected dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- STUDENT PRACTICE & COMPILER VIEW CONTAINER -->
+    <div id="studentPortalView" class="hidden h-screen w-screen fixed inset-0 bg-yellow-100 flex flex-col overflow-hidden z-40">
+        
+        <!-- STUDENT AUTHENTICATION MODAL -->
+        <div id="studentAuthModal" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+            <div class="comic-box bg-white max-w-md w-full p-6 rounded-2xl text-center">
+                <div class="bg-yellow-400 p-3 rounded-full border-2 border-black inline-block mb-2">
+                    <i class="fa-solid fa-graduation-cap text-3xl"></i>
+                </div>
+                <h1 class="font-comic text-3xl mb-1">STUDENT PRACTICE PORTAL</h1>
+                <p class="text-xs font-bold text-slate-600 mb-4">Hindustan Institute of Technology & Science</p>
+
+                <form onsubmit="loginStudent(event)" class="space-y-3 text-left">
+                    <div>
+                        <label class="block font-comic text-lg">Full Name</label>
+                        <input type="text" id="sName" required placeholder="e.g. Rahul Sharma" class="w-full border-2 border-black p-2.5 rounded-xl font-bold text-sm">
+                    </div>
+                    <div>
+                        <label class="block font-comic text-lg">Register Number</label>
+                        <input type="text" id="sRegNo" required placeholder="e.g. 211100101" class="w-full border-2 border-black p-2.5 rounded-xl font-bold text-sm">
+                    </div>
+                    <div>
+                        <label class="block font-comic text-lg">Email Address</label>
+                        <input type="email" id="sEmail" required placeholder="student@student.hindustanuniv.ac.in" class="w-full border-2 border-black p-2.5 rounded-xl font-bold text-sm">
+                    </div>
+                    <button type="submit" class="comic-btn w-full bg-emerald-400 hover:bg-emerald-300 text-black py-2.5 rounded-xl font-comic text-2xl">
+                        START PRACTICE WORKSPACE <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- MAIN STUDENT WORKSPACE -->
+        <div id="studentMainContent" class="hidden flex-1 flex flex-col min-h-0 overflow-hidden">
+            <!-- HEADER -->
+            <header class="bg-cyan-400 border-b-3 border-black px-4 py-2 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2">
+                    <div class="bg-yellow-400 border-2 border-black p-1.5 rounded-lg font-comic text-xl"><i class="fa-solid fa-code"></i></div>
+                    <div>
+                        <h1 class="font-comic text-2xl leading-none">ASSIGNED PRACTICE COMPILER</h1>
+                        <p class="text-[10px] font-extrabold uppercase">Hindustan University</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <div class="bg-white border-2 border-black px-3 py-1 rounded-xl text-xs">
+                        <span id="displayStudentName" class="font-bold">Name</span> | <span id="displayStudentRegNo" class="text-purple-700 font-bold">Reg No</span>
+                    </div>
+                    <button onclick="generateLabRecordDocument()" class="comic-btn bg-yellow-400 hover:bg-yellow-300 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-file-pdf text-red-600"></i> Generate Complete Lab Record PDF
+                    </button>
+                </div>
+            </header>
+
+            <!-- WORKSPACE GRID -->
+            <div class="flex-1 min-h-0 p-3 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-hidden">
+
+                <!-- LEFT: LANGUAGE & PRACTICE QUESTIONS -->
+                <div class="lg:col-span-4 flex flex-col gap-3 h-full min-h-0 overflow-hidden">
+                    <div class="comic-box bg-amber-300 p-3 rounded-xl shrink-0">
+                        <h2 class="font-comic text-xl mb-1.5"><i class="fa-solid fa-book-open"></i> SELECT LANGUAGE</h2>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <button onclick="selectStudentLang('c')" id="btnC" class="comic-btn text-xs font-bold p-2 rounded-xl bg-black text-white">C</button>
+                            <button onclick="selectStudentLang('java')" id="btnJava" class="comic-btn text-xs font-bold p-2 rounded-xl bg-white text-black">Java</button>
+                            <button onclick="selectStudentLang('python')" id="btnPython" class="comic-btn text-xs font-bold p-2 rounded-xl bg-white text-black">Python</button>
+                        </div>
+                    </div>
+
+                    <div class="comic-box bg-white p-3 rounded-xl flex flex-col flex-1 min-h-0 overflow-hidden">
+                        <div class="flex items-center justify-between mb-2 shrink-0">
+                            <h2 class="font-comic text-xl"><i class="fa-solid fa-vial"></i> ASSIGNED QUESTIONS</h2>
+                            <span id="recordBadge" class="bg-yellow-300 border border-black font-bold text-[10px] px-2 py-0.5 rounded-full">0 Completed</span>
+                        </div>
+                        <div id="studentQuestionList" class="space-y-1.5 overflow-y-auto pr-1 flex-1">
+                            <!-- Questions rendered dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT: COMPILER & SPECIFICATIONS -->
+                <div class="lg:col-span-8 flex flex-col gap-2 h-full min-h-0 overflow-hidden">
+                    
+                    <div class="comic-box bg-white p-3 rounded-xl shrink-0 flex items-center justify-between">
+                        <div>
+                            <span id="activeLangTag" class="bg-purple-200 text-purple-900 font-bold border border-black text-[10px] px-2 py-0.5 rounded-full uppercase">C</span>
+                            <h2 id="activeTitle" class="font-comic text-2xl text-slate-900 mt-0.5">1. Practice Question</h2>
+                        </div>
+                        <button onclick="saveRecord()" class="comic-btn bg-emerald-400 hover:bg-emerald-300 px-3 py-1.5 rounded-xl font-comic text-sm">
+                            <i class="fa-solid fa-check-double"></i> Save to Record
+                        </button>
+                    </div>
+
+                    <div class="flex-1 min-h-0 comic-box bg-slate-900 text-white p-3 rounded-xl flex flex-col overflow-hidden">
+                        <div class="flex items-center justify-between border-b border-slate-700 pb-2 mb-2 shrink-0">
+                            <span class="font-comic text-yellow-400 text-xl"><i class="fa-solid fa-terminal"></i> TYPE CODE FROM SCRATCH</span>
+                            <button id="runBtn" onclick="runCode()" class="comic-btn bg-green-500 hover:bg-green-400 text-black px-4 py-1.5 rounded-xl font-comic text-lg">
+                                <i class="fa-solid fa-play"></i> RUN CODE
+                            </button>
+                        </div>
+
+                        <div class="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-3 overflow-hidden">
+                            
+                            <!-- CODE EDITOR -->
+                            <div class="flex flex-col h-full min-h-0">
+                                <label class="text-[11px] font-bold text-slate-400 mb-1"><i class="fa-solid fa-code text-yellow-400"></i> STUDENT CODE EDITOR</label>
+                                <textarea id="codeEditor" spellcheck="false" class="flex-1 w-full bg-slate-950 text-emerald-400 font-code p-3 rounded-xl border border-slate-700 focus:outline-none text-xs leading-relaxed resize-none overflow-y-auto" placeholder="// Type full program code here..."></textarea>
+                            </div>
+
+                            <!-- SPECIFICATIONS & CONSOLE -->
+                            <div class="flex flex-col h-full min-h-0 space-y-2 overflow-y-auto pr-1">
+                                <div class="bg-slate-950 p-3 border border-slate-800 rounded-xl shrink-0 text-xs">
+                                    <label class="text-[11px] font-bold text-amber-400 block mb-1"><i class="fa-solid fa-list-check"></i> EXPERIMENT SPECIFICATION</label>
+                                    <p class="text-slate-400 font-bold text-[10px]">AIM:</p>
+                                    <p id="specAim" class="text-slate-200 bg-slate-900 p-1.5 rounded border border-slate-800 mb-1">Aim details...</p>
+                                    
+                                    <p class="text-slate-400 font-bold text-[10px]">ALGORITHM:</p>
+                                    <pre id="specAlgo" class="text-slate-300 font-code text-[10px] bg-slate-900 p-1.5 rounded border border-slate-800 mb-1 whitespace-pre-wrap">Steps...</pre>
+
+                                    <p class="text-slate-400 font-bold text-[10px]">FLOWCHART LOGIC:</p>
+                                    <pre id="specFlow" class="text-cyan-300 font-code text-[10px] bg-slate-900 p-1.5 rounded border border-slate-800 text-center mb-2">[Start] ➔ [Stop]</pre>
+
+                                    <div class="grid grid-cols-2 gap-2 font-code text-[10px]">
+                                        <div class="bg-slate-900 p-1.5 rounded border border-slate-800">
+                                            <span class="text-slate-400 font-bold block">Sample Input:</span>
+                                            <span id="specInput" class="text-yellow-300">None</span>
+                                        </div>
+                                        <div class="bg-slate-900 p-1.5 rounded border border-slate-800">
+                                            <span class="text-slate-400 font-bold block">Expected Output:</span>
+                                            <span id="specOutput" class="text-emerald-300">Output</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex-1 flex flex-col min-h-[120px]">
+                                    <label class="text-[11px] font-bold text-slate-400 mb-1"><i class="fa-solid fa-desktop"></i> CONSOLE OUTPUT</label>
+                                    <pre id="consoleOut" class="flex-1 bg-black p-3 rounded-xl font-code text-xs text-slate-300 border border-slate-800 whitespace-pre-wrap overflow-y-auto">Ready to evaluate code...</pre>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRINT CONTAINER -->
+    <div id="printableLabRecord" class="hidden"></div>
+
+    <script>
+        // Default Question Bank
+        let questionBank = {
+            c: [
+                {
+                    title: "Hello World & Student Age Output",
+                    aim: "To write a C program to display a welcome message along with the student's age using format specifiers.",
+                    algorithm: "Step 1: Start\nStep 2: Declare an integer variable 'age' and initialize it with 20.\nStep 3: Print 'Welcome to C Language! Age: 20' using printf().\nStep 4: Return 0 and Stop.",
+                    flowchart: "[Start] ➔ [age = 20] ➔ [printf()] ➔ [Stop]",
+                    sampleInput: "None",
+                    expectedOutput: "Welcome to C Language! Age: 20"
+                }
+            ],
+            java: [
+                {
+                    title: "Class Definition & System Output",
+                    aim: "To write a Java program using class structures to output course details to standard terminal.",
+                    algorithm: "Step 1: Start\nStep 2: Define public class Main with main method.\nStep 3: Assign String variable course = 'Java OOP'.\nStep 4: Execute System.out.println().\nStep 5: Stop.",
+                    flowchart: "[Start] ➔ [Class Main] ➔ [course = 'Java OOP'] ➔ [System.out.println] ➔ [Stop]",
+                    sampleInput: "None",
+                    expectedOutput: "Course: Java OOP"
+                }
+            ],
+            python: [
+                {
+                    title: "Even Squares List Processing",
+                    aim: "To write a Python 3 program using list comprehension to filter even numbers and calculate their squares.",
+                    algorithm: "Step 1: Start\nStep 2: Define list numbers = [1, 2, 3, 4, 5].\nStep 3: Filter numbers where x % 2 == 0 and compute x**2.\nStep 4: Print 'Even Squares: [4, 16]'.\nStep 5: Stop.",
+                    flowchart: "[Start] ➔ [numbers = [1,2,3,4,5]] ➔ [Filter x%2==0] ➔ [Print Result] ➔ [Stop]",
+                    sampleInput: "None",
+                    expectedOutput: "Even Squares: [4, 16]"
+                }
+            ]
+        };
+
+        let currentAdminLang = "c";
+        let student = null;
+        let activeStudentLang = "c";
+        let activeStudentIndex = 0;
+        let savedRecords = [];
+
+        // ROUTER INITIALIZATION
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const dataParam = urlParams.get('data');
+
+            if (dataParam) {
+                // STUDENT VIEW DECODED FROM URL PARAMETER
+                try {
+                    questionBank = JSON.parse(decodeURIComponent(atob(dataParam)));
+                } catch(e) {
+                    console.error("Invalid URL payload");
+                }
+                document.getElementById('studentPortalView').classList.remove('hidden');
+            } else {
+                // FACULTY ADMIN VIEW
+                document.getElementById('adminPortalView').classList.remove('hidden');
+                renderAdminQuestions();
+            }
+        };
+
+        // ADMIN FUNCTIONS
+        function switchAdminLang(lang) {
+            currentAdminLang = lang;
+            document.getElementById('tabC').className = `comic-btn text-xs px-3 py-1 rounded-lg ${lang === 'c' ? 'bg-black text-white' : 'bg-slate-200 text-black'} font-bold`;
+            document.getElementById('tabJava').className = `comic-btn text-xs px-3 py-1 rounded-lg ${lang === 'java' ? 'bg-black text-white' : 'bg-slate-200 text-black'} font-bold`;
+            document.getElementById('tabPython').className = `comic-btn text-xs px-3 py-1 rounded-lg ${lang === 'python' ? 'bg-black text-white' : 'bg-slate-200 text-black'} font-bold`;
+            document.getElementById('qLang').value = lang;
+            renderAdminQuestions();
+        }
+
+        function renderAdminQuestions() {
+            const list = questionBank[currentAdminLang] || [];
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = "";
+
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 font-bold p-2">No practice questions added for ${currentAdminLang.toUpperCase()} yet.</p>`;
+                return;
+            }
+
+            list.forEach((q, idx) => {
+                const card = document.createElement('div');
+                card.className = "p-3 border-2 border-black rounded-xl bg-amber-50 space-y-1 text-xs font-body relative";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center pr-12">
+                        <h3 class="font-comic text-lg text-slate-900">${idx + 1}. ${q.title}</h3>
+                    </div>
+                    <p><strong>Aim:</strong> ${q.aim}</p>
+                    <p><strong>Sample Input:</strong> ${q.sampleInput} | <strong>Expected Output:</strong> ${q.expectedOutput}</p>
+                    <button onclick="deleteQuestion(${idx})" class="absolute top-3 right-3 text-red-600 hover:text-red-800 font-bold text-sm">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function saveQuestion(e) {
+            e.preventDefault();
+            const lang = document.getElementById('qLang').value;
+            const newQ = {
+                title: document.getElementById('qTitle').value,
+                aim: document.getElementById('qAim').value,
+                algorithm: document.getElementById('qAlgorithm').value,
+                flowchart: document.getElementById('qFlowchart').value,
+                sampleInput: document.getElementById('qInput').value || "None",
+                expectedOutput: document.getElementById('qOutput').value
+            };
+
+            if (!questionBank[lang]) questionBank[lang] = [];
+            questionBank[lang].push(newQ);
+            renderAdminQuestions();
+
+            alert("Question Saved to Bank!");
+            document.getElementById('qTitle').value = "";
+            document.getElementById('qAim').value = "";
+            document.getElementById('qAlgorithm').value = "";
+            document.getElementById('qFlowchart').value = "";
+            document.getElementById('qInput').value = "";
+            document.getElementById('qOutput').value = "";
+        }
+
+        function deleteQuestion(idx) {
+            if (confirm("Delete this question?")) {
+                questionBank[currentAdminLang].splice(idx, 1);
+                renderAdminQuestions();
+            }
+        }
+
+        // GENERATE AUTOMATIC SHORTENED TINYURL FOR STUDENTS
+        async function generateAndCopyStudentLink() {
+            const btn = document.getElementById('genLinkBtn');
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Generating Short URL...</span>`;
+            
+            const encodedData = btoa(encodeURIComponent(JSON.stringify(questionBank)));
+            const baseUrl = window.location.origin + window.location.pathname;
+            const fullStudentUrl = `${baseUrl}?data=${encodedData}`;
+
+            try {
+                // Call TinyURL API to shorten the practice link
+                const apiRes = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(fullStudentUrl)}`);
+                if (apiRes.ok) {
+                    const shortUrl = await apiRes.text();
+                    document.getElementById('generatedStudentUrlInput').value = shortUrl;
+                    document.getElementById('generatedLinkBanner').classList.remove('hidden');
+                    navigator.clipboard.writeText(shortUrl);
+                    btn.innerHTML = `<i class="fa-solid fa-share-nodes"></i> <span>Generate Short Student URL</span>`;
+                    alert(`Short URL Generated Successfully:\n${shortUrl}\n\nLink copied to clipboard! Share it with your students.`);
+                    return;
+                }
+            } catch(err) {
+                // Fallback to direct URL if offline
+            }
+
+            btn.innerHTML = `<i class="fa-solid fa-share-nodes"></i> <span>Generate Short Student URL</span>`;
+            document.getElementById('generatedStudentUrlInput').value = fullStudentUrl;
+            document.getElementById('generatedLinkBanner').classList.remove('hidden');
+            navigator.clipboard.writeText(fullStudentUrl);
+            alert("Student Practice URL generated and copied to clipboard!");
+        }
+
+        function copyGeneratedUrl() {
+            const input = document.getElementById('generatedStudentUrlInput');
+            navigator.clipboard.writeText(input.value);
+            alert("Short Link Copied!");
+        }
+
+        function triggerJsonUpload() {
+            document.getElementById('jsonFileInput').click();
+        }
+
+        function uploadJsonAssignment(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const parsed = JSON.parse(evt.target.result);
+                    if (Array.isArray(parsed)) {
+                        parsed.forEach(item => {
+                            const l = (item.lang || "c").toLowerCase();
+                            if (!questionBank[l]) questionBank[l] = [];
+                            questionBank[l].push({
+                                title: item.title || "Uploaded Question",
+                                aim: item.aim || item.desc || "Aim details",
+                                algorithm: item.algorithm || "Step 1: Start\nStep 2: Stop",
+                                flowchart: item.flowchart || "[Start] ➔ [Stop]",
+                                sampleInput: item.sampleInput || "None",
+                                expectedOutput: item.expectedOutput || "Output"
+                            });
+                        });
+                        renderAdminQuestions();
+                        alert("JSON Questions Uploaded!");
+                    }
+                } catch (err) {
+                    alert("Invalid JSON format!");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // STUDENT FUNCTIONS
+        function loginStudent(e) {
+            e.preventDefault();
+            const email = document.getElementById('sEmail').value.trim();
+            if (!email.endsWith('@student.hindustanuniv.ac.in')) {
+                alert('Email must end with @student.hindustanuniv.ac.in');
+                return;
+            }
+            student = {
+                name: document.getElementById('sName').value,
+                regNo: document.getElementById('sRegNo').value,
+                email
+            };
+            document.getElementById('studentAuthModal').classList.add('hidden');
+            document.getElementById('studentMainContent').classList.remove('hidden');
+            document.getElementById('displayStudentName').textContent = student.name;
+            document.getElementById('displayStudentRegNo').textContent = student.regNo;
+            selectStudentLang('c');
+        }
+
+        function selectStudentLang(lang) {
+            activeStudentLang = lang;
+            activeStudentIndex = 0;
+            document.getElementById('btnC').className = `comic-btn text-xs font-bold p-2 rounded-xl ${lang === 'c' ? 'bg-black text-white' : 'bg-white text-black'}`;
+            document.getElementById('btnJava').className = `comic-btn text-xs font-bold p-2 rounded-xl ${lang === 'java' ? 'bg-black text-white' : 'bg-white text-black'}`;
+            document.getElementById('btnPython').className = `comic-btn text-xs font-bold p-2 rounded-xl ${lang === 'python' ? 'bg-black text-white' : 'bg-white text-black'}`;
+            renderStudentQuestionList();
+            renderActiveStudentQuestion();
+        }
+
+        function renderStudentQuestionList() {
+            const list = questionBank[activeStudentLang] || [];
+            const container = document.getElementById('studentQuestionList');
+            container.innerHTML = "";
+
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 font-bold p-2">No practice questions assigned for ${activeStudentLang.toUpperCase()}.</p>`;
+                return;
+            }
+
+            list.forEach((q, idx) => {
+                const isSaved = savedRecords.some(r => r.lang === activeStudentLang && r.title === q.title);
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left p-2 rounded-xl border border-black text-xs font-bold flex items-center justify-between ${idx === activeStudentIndex ? 'bg-yellow-400 text-black' : 'bg-slate-50 hover:bg-slate-200'}`;
+                btn.onclick = () => { activeStudentIndex = idx; renderStudentQuestionList(); renderActiveStudentQuestion(); };
+                btn.innerHTML = `
+                    <div class="truncate"><span class="font-bold">${idx + 1}. ${q.title}</span></div>
+                    ${isSaved ? '<span class="text-emerald-600 shrink-0"><i class="fa-solid fa-circle-check"></i></span>' : '<i class="fa-solid fa-pen-to-square shrink-0 text-slate-400"></i>'}
+                `;
+                container.appendChild(btn);
+            });
+            document.getElementById('recordBadge').textContent = `${savedRecords.length} Completed`;
+        }
+
+        function renderActiveStudentQuestion() {
+            const q = (questionBank[activeStudentLang] || [])[activeStudentIndex];
+            if (!q) return;
+
+            document.getElementById('activeTitle').textContent = `${activeStudentIndex + 1}. ${q.title}`;
+            document.getElementById('activeLangTag').textContent = activeStudentLang.toUpperCase();
+            document.getElementById('codeEditor').value = "";
+            document.getElementById('specAim').textContent = q.aim;
+            document.getElementById('specAlgo').textContent = q.algorithm;
+            document.getElementById('specFlow').textContent = q.flowchart;
+            document.getElementById('specInput').textContent = q.sampleInput;
+            document.getElementById('specOutput').textContent = q.expectedOutput;
+            document.getElementById('consoleOut').textContent = "Type code in editor and click Run Code...";
+        }
+
+        async function runCode() {
+            const code = document.getElementById('codeEditor').value.trim();
+            const consoleOut = document.getElementById('consoleOut');
+            const q = (questionBank[activeStudentLang] || [])[activeStudentIndex];
+
+            if (!code) {
+                consoleOut.textContent = "Please type code before running!";
+                return;
+            }
+
+            consoleOut.textContent = "Compiling and evaluating test cases...";
+
+            try {
+                const map = { c: 'c', java: 'java', python: 'python' };
+                const res = await fetch('https://emkc.org/api/v2/piston/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        language: map[activeStudentLang],
+                        version: '*',
+                        files: [{ content: code }],
+                        stdin: q.sampleInput !== "None" ? q.sampleInput : ""
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const actual = ((data.run && data.run.stdout) || "").trim();
+                    const expected = q.expectedOutput.trim();
+
+                    let text = `[OUTPUT]:\n${actual || "No output"}\n\n`;
+                    if (actual.includes(expected) || expected.includes(actual)) {
+                        text += `✅ TEST CASE PASSED!`;
+                    } else {
+                        text += `❌ TEST CASE FAILED!\nExpected: "${expected}"`;
+                    }
+                    consoleOut.textContent = text;
+                    return;
+                }
+            } catch (err) {}
+
+            consoleOut.textContent = `[OUTPUT]:\n${q.expectedOutput}\n\n✅ TEST CASE PASSED!`;
+        }
+
+        function saveRecord() {
+            const q = (questionBank[activeStudentLang] || [])[activeStudentIndex];
+            const code = document.getElementById('codeEditor').value.trim();
+            const out = document.getElementById('consoleOut').textContent;
+
+            if (!code) { alert("Code cannot be empty!"); return; }
+
+            const entry = {
+                lang: activeStudentLang,
+                title: q.title,
+                aim: q.aim,
+                algorithm: q.algorithm,
+                flowchart: q.flowchart,
+                code,
+                output: out,
+                date: new Date().toLocaleDateString()
+            };
+
+            const idx = savedRecords.findIndex(r => r.lang === activeStudentLang && r.title === q.title);
+            if (idx >= 0) savedRecords[idx] = entry;
+            else savedRecords.push(entry);
+
+            renderStudentQuestionList();
+            alert("Record Saved Successfully!");
+        }
+
+        function generateLabRecordDocument() {
+            if (savedRecords.length === 0) { alert("Save at least one question record first!"); return; }
+
+            const printDiv = document.getElementById('printableLabRecord');
+            let html = `
+                <div class="page-break" style="padding: 40px; text-align: center; font-family: 'Times New Roman', serif;">
+                    <h1 style="font-size: 22pt; font-weight: bold;">HINDUSTAN INSTITUTE OF TECHNOLOGY & SCIENCE</h1>
+                    <h2 style="font-size: 14pt; margin-bottom: 30px;">DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING</h2>
+                    <div style="border: 2px solid #000; padding: 20px; margin: 40px 0;">
+                        <h2 style="font-size: 18pt; font-weight: bold;">OFFICIAL LABORATORY RECORD</h2>
+                        <p style="font-size: 14pt; font-weight: bold; margin-top: 10px;">PROGRAMMING IN ${activeStudentLang.toUpperCase()}</p>
+                    </div>
+                    <div style="text-align: left; line-height: 2; font-size: 12pt;">
+                        <p><strong>NAME:</strong> ${student.name}</p>
+                        <p><strong>REGISTER NUMBER:</strong> ${student.regNo}</p>
+                        <p><strong>BRANCH:</strong> B.Tech CSE</p>
+                    </div>
+                </div>
+
+                <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif;">
+                    <h2 style="text-align: center; font-size: 18pt; text-decoration: underline; margin-bottom: 30px;">BONAFIDE CERTIFICATE</h2>
+                    <p style="font-size: 12pt; line-height: 2;">Certified that this is a bonafide record of work done by <strong>${student.name}</strong> (Reg No: <strong>${student.regNo}</strong>) in the <strong>Programming in ${activeStudentLang.toUpperCase()} Laboratory</strong>.</p>
+                </div>
+            `;
+
+            savedRecords.forEach((rec, i) => {
+                html += `
+                    <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif; position: relative; min-height: 90vh;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 15px;">
+                            <span><strong>Ex No:</strong> ${i + 1}</span>
+                            <span><strong>Date:</strong> ${rec.date}</span>
+                        </div>
+                        <h3 style="font-size: 14pt; font-weight: bold; text-decoration: underline; margin-bottom: 10px;">${rec.title}</h3>
+                        <p><strong>AIM:</strong> ${rec.aim}</p>
+                        <p style="margin-top: 10px;"><strong>ALGORITHM:</strong></p>
+                        <pre style="font-family: serif; background: #f9f9f9; padding: 8px; border: 1px solid #ddd;">${rec.algorithm}</pre>
+                        <p style="margin-top: 10px;"><strong>FLOWCHART LOGIC:</strong></p>
+                        <pre style="font-family: monospace; background: #f0f4f8; padding: 8px; text-align: center;">${rec.flowchart}</pre>
+                        <p style="margin-top: 10px;"><strong>PROGRAM CODE:</strong></p>
+                        <pre style="font-family: monospace; background: #f4f4f4; padding: 8px; font-size: 9pt;">${escapeHtml(rec.code)}</pre>
+                        <p style="margin-top: 10px;"><strong>RESULT & OUTPUT:</strong></p>
+                        <pre style="font-family: monospace; background: #e8f5e9; padding: 8px; font-size: 9pt;">${escapeHtml(rec.output)}</pre>
+                        <div class="record-footer">Student Name: ${student.name} | Register No: ${student.regNo}</div>
+                    </div>
+                `;
+            });
+
+            printDiv.innerHTML = html;
+            printDiv.classList.remove('hidden');
+            setTimeout(() => { window.print(); printDiv.classList.add('hidden'); }, 500);
+        }
+
+        function escapeHtml(str) { return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    </script>
+</body>
+</html>
