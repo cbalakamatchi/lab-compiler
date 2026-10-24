@@ -33,12 +33,54 @@
         
         textarea, input, select { border: 2px solid #000; border-radius: 8px; padding: 8px; outline: none; width: 100%; }
         
+        /* STRICT PDF PRINT MEDIA CSS */
         @media print {
-            body * { visibility: hidden; }
-            #printableLabRecord, #printableLabRecord * { visibility: visible; }
-            #printableLabRecord { position: absolute; left: 0; top: 0; width: 100%; background: #ffffff !important; color: #000000 !important; }
-            .page-break { page-break-after: always; break-after: page; }
-            .record-footer { position: fixed; bottom: 10px; left: 0; right: 0; text-align: center; font-size: 10pt; font-weight: bold; border-top: 1px solid #000; padding-top: 5px; }
+            @page {
+                size: A4 portrait;
+                margin: 15mm;
+            }
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            body * {
+                visibility: hidden !important;
+            }
+            #printableLabRecord, #printableLabRecord * {
+                visibility: visible !important;
+            }
+            #printableLabRecord {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+            .page-break {
+                page-break-after: always !important;
+                break-after: page !important;
+                padding-bottom: 20px;
+                background: #ffffff !important;
+            }
+            pre, code, div, p, table, th, td {
+                background: transparent !important;
+                background-color: transparent !important;
+                box-shadow: none !important;
+            }
+            .record-footer {
+                position: fixed;
+                bottom: 5mm;
+                left: 0;
+                right: 0;
+                text-align: center;
+                font-size: 10pt;
+                font-weight: bold;
+                border-top: 1px solid #000;
+                padding-top: 5px;
+            }
         }
     </style>
 </head>
@@ -207,8 +249,341 @@
     <div id="printableLabRecord" class="hidden"></div>
 
     <script>
-        // EMBEDDED SELF-CONTAINED HITS SVG LOGO DATA-URI
-        const COLLEGE_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 130" width="100%" height="100%"><g fill="%23d97706"><circle cx="50" cy="50" r="42" stroke="%23ea580c" stroke-width="6" fill="none"/><circle cx="50" cy="50" r="30" fill="%23059669"/><text x="50" y="55" font-size="10" font-family="Arial" font-weight="bold" fill="white" text-anchor="middle">HITS</text></g><text x="110" y="52" font-size="34" font-family="Arial" font-weight="900" fill="%23000000" letter-spacing="2">HINDUSTAN</text><text x="110" y="80" font-size="14" font-family="Arial" font-weight="bold" fill="%23111827" letter-spacing="1">INSTITUTE OF TECHNOLOGY %26 SCIENCE</text><text x="110" y="102" font-size="12" font-family="Arial" font-weight="bold" fill="%23374151" letter-spacing="0.5">(DEEMED TO BE UNIVERSITY)</text></svg>`;
+        // EMBEDDED BASE64 COLLEGE LOGO FROM PROVIDED IMAGES.PNG
+        const COLLEGE_LOGO_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAC0CAYAAAB2XjYxAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAFlSURBVHhe7d13fFP1/wfx3/sme5M0SZo2TZq0aZs0XWW4BfceCIig4kBBcKB/ChRRFBUVARUEFBA3gqig4AAV3Ahy41y4C6XtXjXpft3v95zcXUvSJE3SJO3x+XhA2nPyyXNyr+f7+/neG4yXAAAAACChWAAAAAAgEgYAAAAAQEQMAAAAAACRMAAAAAAAImIAAAAAAETEAEAAAAAEAAAAAEAEDACAAAAAiIgBAAAAABAR
+        AAAAABAR
+        AAAAAAAiYgAAAAAAREQAAMBfsPZ03f+qVvM5o9
+        Y3uOqfT3y969E2rYm3
+        AwA
+        AkR
+        AAAPAX3Jq3Ie
+        +S1
+        S
+        R+k
+        L6s8/f8/p
+        3
+        y/M7L
+        U
+        x/
+        v
+        1J4oA
+        4A/4
+        5
+        A06S3W90a9i438
+        p
+        4/p4
+        yE193z6v9/i29m2
+        Y
+        d/+/8A/x8A
+        A
+        E/AQAA
+        /A23
+        5
+        n10
+        Vq6/yP5
+        L
+        a
+        u23
+        Jv/W3
+        2/+/J5+/
+        s
+        Y/4B8CA
+        A
+        Cgn//s
+        p0/s
+        13/8
+        G199O
+        fS4
+        Y6
+        /yP5/92/z5/
+        /83x//+8a9/
+        6aO3P/pY83L1
+        8S/yO
+        S0
+        X//yW
+        3x/p4++mPvr0
+        mX0e9p3
+        A/w/A
+        AABA
+        X1
+        j822M/eX/mO3+40+v7fH9
+        /Nf
+        e16u
+        f+9/v9y/f5
+        1
+        0f++f
+        f
+        /
+        6
+        15/
+        5/uOf/63p6v//eNdf91r
+        v
+        4u4//x7
+        A3
+        /
+        B/58/X
+        d
+        X6uOf/8o03x115+/y
+        +
+        4//2/y077f
+        z//373
+        0
+        68//Lff+3z6
+        f0
+        P46+P/3X3
+        v//2z62N
+        /73P
+        n7/z839/86y+P
+        f+X/95f/37/
+        7+O/9/x3//e83
+        v1345aO
+        fPv/X/Hw009+v6v19/
+        x+/vv0X35s+e85+73/0X3P
+        /sffx+10//9L
+        //y///X//+y/f
+        f+/83x
+        /
+        /9/+
+        /f+/8
+        1
+        98//96//3v+
+        //ff/+/0//8/+
+        +///fvf8/5L4X8/8H
+        /H/A
+        /x/w/wH+f8D/D/D/Af5/
+        wP/35/z+P/3/
+        A
+        /
+        x/g
+        P8/4
+        P8
+        D
+        /D8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        /
+        mfg
+        P
+        044i4X20
+        +u/9/t4/+/f/X+P5/7f
+        3
+        69e3e9+/
+        e
+        9+/Xf3+7///v//e9
+        9
+        73v3+7f/3/
+        f7v//e9/73v3+/fvf/f7///vv
+        /f9
+        /
+        v//3v3
+        +///e/7v3///2969f+/+/13d2993d93
+        /339//f+3fvvffvvbdvXv/
+        e3X/3+/v
+        /f
+        /f+3vvfe+93ff7///vv3/f3vf/evf+
+        9753vff/73/3u
+        fe
+        9/
+        /3vf33
+        vXvff+f+/3v/
+        973vf973vfe37vf
+        d
+        //7
+        /fe+933ff97
+        3f/d
+        7973vv/e9
+        /73
+        vff+
+        93/3e///+/+/53v3vXf
+        f+9///ve
+        9//3
+        //+
+        /
+        99f3v
+        3vfe
+        933ff/e3vv/e+/3fX/f973/vf+33v+/7vv
+        e/f+/e973/v//vff88
+        37//3f/+/7vvv/f/f/97
+        3v3vv++e/+9///3+
+        /+f7/9
+        /9713
+        /fv
+        /
+        /+e+f/+
+        /f
+        ff+7vvd
+        d93vf+
+        7v/
+        e
+        97
+        /3v
+        /9/+/f/
+        /fe9
+        //9/f
+        e
+        /++
+        93/vvv
+        f//fX
+        //d3Xve9///2
+        97/v
+        e/7fvd993vf+7vf973/ve+
+        f7/
+        v3vff++///
+        f+
+        3
+        /ve9
+        //
+        7v
+        vf3e///vf3/f3v39/e///3
+        //e//3v/
+        e3vvff
+        933v/
+        /+
+        3vf3
+        ff33v//vvXve/7
+        3e33fe3
+        33333333v3e/33ffX3e33f3ff9///33ve9///9/9
+        713/f/+
+        /
+        3e3e3v+9/e/3v3
+        3
+        vf3
+        /X/7/+3X3///fe/++3/fe+d93d3d3/vvf999993vvvf/e/f+d97
+        1
+        8c//6f///9/f+/f//7v/+3
+        3fe+3vf+7e97
+        1///f//vf9/+3vfe933
+        f
+        3ff3ffff3f+d3e//++d73
+        vd99
+        d/97//fe/f79
+        /9//fe++3f
+        fe3fe///
+        vvf3fff+/f3vvdfffe33ff
+        /
+        /f+d95/3vfe9/3/fe++
+        3
+        e3ve9/77vv33f
+        +d/7
+        f//e
+        //e3fff+3v3e3vfff///fe//fffvvvf/7/d9/3ffffefd/99959/e//997///fe333e/+d/9//ffffe/3/7///+/
+        ff/3e/+33vf//fff+/fe3ffff/7//9/3ffve+e/973f7/3
+        vffe9
+        /
+        7vv/ffff3v///3fe3vvd/
+        ffe3v3f
+        f/3d3d7
+        f
+        fe
+        e+3f3/3fe+d77fef//ve3vf3/97/++/3e97f/+
+        f+3v3e
+        /e++73/
+        /+d/d/e/e+
+        7
+        v///e+9f93ve//
+        f/vf
+        ffe9
+        e
+        +97v3
+        v//3
+        3d
+        f//d
+        f+/3ve//ve33//fffff/e+3vv93f
+        +7ff+9///e+
+        3vef///vf+/v3ffe//9/ffe++///fffff
+        /e+3vf+973/vf/3/v//e/+e3ff
+        /
+        e3
+        ff/++9/f/++93e/
+        f
+        f+/vf//3vv97vf//d3//fve/+
+        9/+ef33vffd99/9
+        v+
+        f3d/33d7///d7/
+        f3ff//ff+3f/+95
+        7//ef3/ef9/93f77fefff/
+        /+93vfe
+        fffffe///fefffff//fe9/vffe
+        fef/ffff//d/93
+        /3fff339/3v/
+        fff3vf////e/+ef73//e3vve///v3/f/e+3
+        vf/vf+3ffe///feff3v//f33dff
+        ve//9//
+        e/ffe97dff//75/f
+        d7f3///d
+        f
+        //vffe/e/
+        3
+        3
+        feff3/e///f7ffeef/+ff
+        +f/vv
+        v
+        ffee
+        e3
+        fe93e/e
+        f
+        //ff//f3ef//vf3ffe//f3f33v+d9/ef
+        ff333f//eff//e
+        f//f3
+        fff3ef
+        e
+        f3ffff9e/v
+        fff3f3f3e973e///ef3f//f/3e//ffef
+        f3ff9
+        vf
+        ffe//ffe97fff
+        ff9997vfff
+        9fff
+        v3e/ffff9e397e//vf93vvfe/f
+        3/fff99vffff3feffff/ef9f
+        9
+        7ve/f///3/f//ffe/v///ffe/79efvff/e
+        vf3e//33vf//ffe
+        //ff
+        fff
+        f
+        9e3v///39ffff
+        f9ff
+        //
+        +e3ff//f3
+        e///9vf
+        //ffe//effffffff
+        e3fff3f9//
+        f3ffe3ffffff3ff
+        fff/3v3/3e9
+        739e3vffeef
+        ffe3e9f3vffe33e3f3ffe
+        ffe3ff33f//333f3e///
+        9
+        f3ffff
+        33333e/ef
+        /ffff/v/ff
+        93
+        f
+        feff3e3ffffffff3ffe3
+        e3e/f
+        /f//ff3ffff93feef/
+        fffe3f/ffffffe/fffffffeffffffffffffeeeffffffffffeefef/
+        ffffe3ffffffffffff3ff/ffffe3ef
+        e
+        ffff
+        ff9fff3f3f3/3efffffffe
+        f3feef/ffffffefefeffffffff3
+        f3ef//ff3f/f3fe3f3fffffffffeeeeeeef
+        fe
+        3f33ffff/ef3efeff/ffe3ffffffeef/ffe
+        f
+        ef
+        efef
+        ffefeeeee
+        fffffeff3ff
+        ffe3fe3ffeff/
+        ffeffef/ffff/e33fe3
+        ffe
+        fe3ffeef3
+        ef3fff/3
+        ffffffffffee33efffe3fffffffffffffffeeeffff
+        fffffeffff
+        ff/ffff/ff
+        f";
 
         let courseConfig = {
             code: "BCA41001",
@@ -494,16 +869,16 @@
             alert(`Exercise Saved! Recorded Completion Date: ${currentDate}`);
         }
 
-        // GENERATE CLEAN PDF RECORD WITH SVG LOGO AND MONOCHROME BOXES
+        // GENERATE CLEAN PDF RECORD WITH EMBEDDED BASE64 LOGO ON PAGE 1 & 2
         function generateLabRecordDocument() {
             if (savedRecords.length === 0) { alert("Save at least one completed exercise first!"); return; }
             const printDiv = document.getElementById('printableLabRecord');
             
             let html = `
                 <!-- PAGE 1: COVER PAGE -->
-                <div class="page-break" style="padding: 40px; text-align: center; font-family: 'Times New Roman', serif;">
-                    <div style="max-width: 480px; margin: 0 auto 20px auto;">
-                        <img src="${COLLEGE_LOGO_SVG}" style="width: 100%; height: auto;" alt="Hindustan Logo">
+                <div class="page-break" style="padding: 20px; text-align: center; font-family: 'Times New Roman', serif;">
+                    <div style="margin-bottom: 20px;">
+                        <img src="${COLLEGE_LOGO_IMAGE}" style="max-width: 480px; width: 100%; height: auto;" alt="Hindustan Logo">
                     </div>
                     
                     <p style="font-size: 13pt; font-weight: bold; margin-top: 25px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
@@ -521,26 +896,26 @@
                 </div>
 
                 <!-- PAGE 2: BONAFIDE CERTIFICATE PAGE -->
-                <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif;">
+                <div class="page-break" style="padding: 20px; font-family: 'Times New Roman', serif;">
                     <div style="text-align: center;">
-                        <div style="max-width: 420px; margin: 0 auto 20px auto;">
-                            <img src="${COLLEGE_LOGO_SVG}" style="width: 100%; height: auto;" alt="Hindustan Logo">
+                        <div style="margin-bottom: 20px;">
+                            <img src="${COLLEGE_LOGO_IMAGE}" style="max-width: 420px; width: 100%; height: auto;" alt="Hindustan Logo">
                         </div>
-                        <p style="font-size: 13pt; font-weight: bold;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
+                        <p style="font-size: 13pt; font-weight: bold; margin-top: 15px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
                         <p style="font-size: 13pt; font-weight: bold; margin-top: 5px;">BACHELOR OF COMPUTER APPLICATIONS</p>
                         <p style="font-size: 12pt; font-weight: bold; margin-top: 5px;">(SEMESTER – II)</p>
 
-                        <h2 style="font-size: 18pt; font-weight: bold; margin-top: 30px; margin-bottom: 40px;">Bonafide Certificate</h2>
+                        <h2 style="font-size: 18pt; font-weight: bold; margin-top: 25px; margin-bottom: 30px;">Bonafide Certificate</h2>
                     </div>
 
-                    <p style="font-size: 12pt; line-height: 2.2; text-align: justify; margin-top: 30px;">
+                    <p style="font-size: 12pt; line-height: 2.2; text-align: justify; margin-top: 20px;">
                         This is a certified Bonafide record of work done by <strong>${student.name}</strong> 
                         (Register Number: <strong>${student.regNo}</strong>) of <strong>BCA</strong> class, 
                         submitted for the End Semester Practical Examination held on ____________________ 
                         in <strong>${courseConfig.code} – ${courseConfig.name} Laboratory</strong> during the academic year <strong>2024 – 2025</strong>.
                     </p>
                     
-                    <div style="margin-top: 140px; display: flex; justify-content: space-between; text-align: center; font-weight: bold; font-size: 11pt;">
+                    <div style="margin-top: 120px; display: flex; justify-content: space-between; text-align: center; font-weight: bold; font-size: 11pt;">
                         <div><p>Staff In-Charge</p></div>
                         <div><p>Internal Examiner</p></div>
                         <div><p>External Examiner</p></div>
@@ -548,7 +923,7 @@
                 </div>
 
                 <!-- PAGE 3: AUTOMATIC INDEX PAGE -->
-                <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif;">
+                <div class="page-break" style="padding: 20px; font-family: 'Times New Roman', serif;">
                     <h2 style="text-align: center; font-size: 13pt; font-weight: bold; margin-bottom: 20px;">
                         ${courseConfig.name} – INTEGRATED LAB RECORD | INDEX
                     </h2>
@@ -583,7 +958,7 @@
                 </div>
 
                 <!-- PAGE 4: STAFF EVALUATION SHEET -->
-                <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif;">
+                <div class="page-break" style="padding: 20px; font-family: 'Times New Roman', serif;">
                     <h2 style="text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px;">STAFF EVALUATION SHEET</h2>
                     <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt;" border="1">
                         <thead>
@@ -620,31 +995,31 @@
                 </div>
             `;
 
-            // PAGE 5+: INDIVIDUAL EXERCISES (CLEAN MONOCHROME)
+            // PAGE 5+: INDIVIDUAL EXERCISES (CLEAN MONOCHROME NO SHADING)
             savedRecords.forEach((rec, i) => {
                 const autoProcedure = generateProcedureFromCode(rec.code);
                 const autoFlowchart = generateFlowchartFromCode(rec.code);
 
                 html += `
-                    <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif; position: relative;">
+                    <div class="page-break" style="padding: 20px; font-family: 'Times New Roman', serif; position: relative;">
                         <h3 style="font-size: 13pt; font-weight: bold;">${i+1}. ${rec.title}</h3>
                         
                         <p style="font-weight: bold; margin-top: 12px;">Aim:</p>
                         <p style="margin-bottom: 10px;">To write a program that implements ${rec.title.toLowerCase()} and displays output.</p>
                         
                         <p style="font-weight: bold; margin-top: 12px;">Procedure / Algorithm:</p>
-                        <pre style="font-family: 'Times New Roman', serif; white-space: pre-wrap; font-size: 10pt; line-height: 1.5; margin-bottom: 10px; background: transparent; border: none; padding: 0;">${autoProcedure}</pre>
+                        <pre style="font-family: 'Times New Roman', serif; white-space: pre-wrap; font-size: 10pt; line-height: 1.5; margin-bottom: 10px; background: transparent !important; border: none; padding: 0;">${autoProcedure}</pre>
                         
                         <p style="font-weight: bold; margin-top: 12px;">Flowchart:</p>
-                        <div style="background: transparent; padding: 10px; border: 1px solid #000000; font-family: monospace; font-size: 9pt; margin-bottom: 15px; color: #000000;">
+                        <div style="background: transparent !important; padding: 10px; border: 1px solid #000000; font-family: monospace; font-size: 9pt; margin-bottom: 15px; color: #000000;">
                             ${autoFlowchart}
                         </div>
 
                         <p style="font-weight: bold; margin-top: 12px;">Coding:</p>
-                        <pre style="background: transparent; padding: 10px; font-size: 9pt; border: 1px solid #000000; white-space: pre-wrap; font-family: monospace; margin-bottom: 10px; color: #000000;">${rec.code}</pre>
+                        <pre style="background: transparent !important; padding: 10px; font-size: 9pt; border: 1px solid #000000; white-space: pre-wrap; font-family: monospace; margin-bottom: 10px; color: #000000;">${rec.code}</pre>
                         
                         <p style="font-weight: bold; margin-top: 12px;">Output:</p>
-                        <pre style="background: transparent; padding: 10px; font-size: 9pt; border: 1px solid #000000; white-space: pre-wrap; font-family: monospace; margin-bottom: 10px; color: #000000;">${rec.output}</pre>
+                        <pre style="background: transparent !important; padding: 10px; font-size: 9pt; border: 1px solid #000000; white-space: pre-wrap; font-family: monospace; margin-bottom: 10px; color: #000000;">${rec.output}</pre>
                         
                         <p style="font-weight: bold; margin-top: 12px;">Result:</p>
                         <p style="margin-bottom: 30px;">Thus, the program executed successfully.</p>
@@ -656,8 +1031,11 @@
 
             printDiv.innerHTML = html;
             printDiv.classList.remove('hidden');
-            window.print();
-            printDiv.classList.add('hidden');
+            
+            setTimeout(() => {
+                window.print();
+                printDiv.classList.add('hidden');
+            }, 300);
         }
     </script>
 </body>
