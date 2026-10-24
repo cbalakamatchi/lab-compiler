@@ -316,25 +316,30 @@
         let currentExecutionPassed = false;
         let validatedActualOutput = "";
 
-        // ROUTER INITIALIZATION
+        // SAFE ROUTER INITIALIZATION WITH FALLBACK
         window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const dataParam = urlParams.get('data');
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const dataParam = urlParams.get('data');
 
-            if (dataParam) {
-                // STUDENT VIEW
-                try {
-                    questionBank = JSON.parse(decodeURIComponent(atob(dataParam)));
-                } catch(e) {
-                    console.error("Invalid URL Payload");
+                if (dataParam) {
+                    try {
+                        const decodedStr = decodeURIComponent(atob(dataParam));
+                        questionBank = JSON.parse(decodedStr);
+                        document.getElementById('studentPortalView').classList.remove('hidden');
+                        return;
+                    } catch (e) {
+                        console.error("Malformed URL Payload", e);
+                    }
                 }
-                document.getElementById('studentPortalView').classList.remove('hidden');
-            } else {
-                // FACULTY ADMIN VIEW
-                document.getElementById('adminPortalView').classList.remove('hidden');
-                renderAdminQuestions();
-                renderStudentLogsTable();
+            } catch (err) {
+                console.error("Routing error", err);
             }
+
+            // FALLBACK TO ADMIN VIEW
+            document.getElementById('adminPortalView').classList.remove('hidden');
+            renderAdminQuestions();
+            renderStudentLogsTable();
         };
 
         // ADMIN PROGRAM FILE UPLOAD
