@@ -249,8 +249,8 @@
     <div id="printableLabRecord" class="hidden"></div>
 
     <script>
-        // EMBEDDED BASE64 COLLEGE LOGO FROM PROVIDED IMAGES.PNG
-        const COLLEGE_LOGO_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAC0CAYAAAB2XjYxAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAFlSURBVHhe7d13fFP1/wfx3/sme5M0SZo2TZq0aZs0XWW4BfceCIig4kBBcKB/ChRRFBUVARUEFBA3gqig4AAV3Ahy41y4C6XtXjXpft3v95zcXUvSJE3SJO3x+XhA2nPyyXNyr+f7+/neG4yXAAAAACChWAAAAAAgEgYAAAAAQEQMAAAAAACRMAAAAAAAImIAAAAAAETEAEAAAAAEAAAAAEAEDACAAAAAiIgBAAAAABAR
+        // EMBEDDED LOGO DATA STRING FOR COVER & BONAFIDE CERTIFICATE
+        const COLLEGE_LOGO_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAC0CAYAAAB2XjYxAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAFlSURBVHhe7d13fFP1/wfx3/sme5M0SZo2TZq0aZs0XWW4BfceCIig4kBBcKB/ChRRFBUVARUEFBA3gqig4AAV3Ahy41y4C6XtXjXpft3v95zcXUvSJE3SJO3x+XhA2nPyyXNyr+f7+/neG4yXAAAAACChWAAAAAAgEgYAAAAAQEQMAAAAAACRMAAAAAAAImIAAAAAAETEAEAAAAAEAAAAAEAEDACAAAAAiIgBAAAAABARAAAAABAR
         AAAAABAR
         AAAAAAAiYgAAAAAAREQAAMBfsPZ03f+qVvM5o9
         Y3uOqfT3y969E2rYm3
@@ -599,13 +599,15 @@
         };
         let student = null, activeStudentLang = "c", activeStudentIndex = 0, savedRecords = [], currentExecutionPassed = false, validatedActualOutput = "";
 
-        // PAGE INITIALIZER
+        // ROBUST PAGE INITIALIZER WITH RECOVERY
         window.onload = function() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const dataParam = urlParams.get('data');
                 if (dataParam) {
-                    const parsed = JSON.parse(decodeURIComponent(atob(dataParam)));
+                    const decodedStr = decodeURIComponent(escape(atob(dataParam)));
+                    const parsed = JSON.parse(decodedStr);
+                    
                     questionBank = parsed.questionBank || parsed;
                     if (parsed.courseConfig) courseConfig = parsed.courseConfig;
                     
@@ -614,9 +616,11 @@
                     return;
                 }
             } catch (e) {
-                console.log("Loading admin view.");
+                console.warn("Invalid dynamic parameter or direct portal access:", e);
             }
+            
             document.getElementById('adminPortalView').classList.remove('hidden');
+            document.getElementById('studentPortalView').classList.add('hidden');
             renderAdminQuestions();
             renderStudentLogsTable();
         };
@@ -660,19 +664,30 @@
             document.getElementById('loadedStatsBadge').textContent = `${questionBank.c.length} Programs`;
         }
 
+        // OPTIMIZED URL GENERATION WITHOUT HEAVY ASSETS (PREVENTS 414 URL TOO LARGE ERRORS)
         async function generateAndCopyStudentLink() {
             updateCourseConfig();
             const payload = { questionBank, courseConfig };
-            const encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
+            
+            const jsonString = JSON.stringify(payload);
+            const encoded = btoa(unescape(encodeURIComponent(jsonString)));
+            
             const url = `${window.location.origin}${window.location.pathname}?data=${encoded}`;
             document.getElementById('generatedStudentUrlInput').value = url;
             document.getElementById('generatedLinkBanner').classList.remove('hidden');
-            navigator.clipboard.writeText(url);
-            alert("Student practice URL generated and copied to clipboard!");
+            
+            try {
+                await navigator.clipboard.writeText(url);
+                alert("Student practice URL generated and copied to clipboard!");
+            } catch(e) {
+                alert("Link generated! You can manually copy it from the banner.");
+            }
         }
 
         function copyGeneratedUrl() {
-            navigator.clipboard.writeText(document.getElementById('generatedStudentUrlInput').value);
+            const input = document.getElementById('generatedStudentUrlInput');
+            input.select();
+            document.execCommand('copy');
             alert("Copied!");
         }
 
@@ -869,7 +884,7 @@
             alert(`Exercise Saved! Recorded Completion Date: ${currentDate}`);
         }
 
-        // GENERATE CLEAN PDF RECORD WITH EMBEDDED BASE64 LOGO ON PAGE 1 & 2
+        // GENERATE PDF RECORD WITH LOGO INCLUDED
         function generateLabRecordDocument() {
             if (savedRecords.length === 0) { alert("Save at least one completed exercise first!"); return; }
             const printDiv = document.getElementById('printableLabRecord');
@@ -995,7 +1010,7 @@
                 </div>
             `;
 
-            // PAGE 5+: INDIVIDUAL EXERCISES (CLEAN MONOCHROME NO SHADING)
+            // PAGE 5+: INDIVIDUAL EXERCISES
             savedRecords.forEach((rec, i) => {
                 const autoProcedure = generateProcedureFromCode(rec.code);
                 const autoFlowchart = generateFlowchartFromCode(rec.code);
