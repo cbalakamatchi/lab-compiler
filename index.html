@@ -36,7 +36,7 @@
         @media print {
             body * { visibility: hidden; }
             #printableLabRecord, #printableLabRecord * { visibility: visible; }
-            #printableLabRecord { position: absolute; left: 0; top: 0; width: 100%; background: white !important; color: black !important; }
+            #printableLabRecord { position: absolute; left: 0; top: 0; width: 100%; background: #ffffff !important; color: #000000 !important; }
             .page-break { page-break-after: always; break-after: page; }
             .record-footer { position: fixed; bottom: 10px; left: 0; right: 0; text-align: center; font-size: 10pt; font-weight: bold; border-top: 1px solid #000; padding-top: 5px; }
         }
@@ -77,11 +77,11 @@
             <div class="grid grid-2 gap-2">
                 <div>
                     <label style="font-size: 11px; font-weight: bold;">Course Code</label>
-                    <input type="text" id="adminCourseCode" value="ACA31005" onchange="updateCourseConfig()" placeholder="e.g. ACA31005">
+                    <input type="text" id="adminCourseCode" value="BCA41001" onchange="updateCourseConfig()" placeholder="e.g. BCA41001">
                 </div>
                 <div>
                     <label style="font-size: 11px; font-weight: bold;">Course Name</label>
-                    <input type="text" id="adminCourseName" value="OBJECT ORIENTED PROGRAMMING" onchange="updateCourseConfig()" placeholder="e.g. OBJECT ORIENTED PROGRAMMING">
+                    <input type="text" id="adminCourseName" value="PROBLEM SOLVING PROGRAMMING" onchange="updateCourseConfig()" placeholder="e.g. PROBLEM SOLVING PROGRAMMING">
                 </div>
             </div>
         </div>
@@ -98,7 +98,7 @@
                 </div>
                 <input type="file" id="codeFileInput" accept=".c,.java,.py,.json,.txt" multiple onchange="handleCodeFileUpload(event)" class="hidden">
                 <p style="font-size: 11px; margin-top: 15px; background: #0f172a; color: #34d399; padding: 10px; border-radius: 8px;">
-                    <strong>Validation Guard:</strong> Registration logic checks for valid credentials or Register Number starting with <strong>26SU</strong> or <strong>26SP</strong>.
+                    <strong>Validation Guard:</strong> Register Number validation verifies prefixes <strong>26SU</strong> or <strong>26SP</strong>.
                 </p>
             </div>
 
@@ -147,11 +147,11 @@
                     </div>
                     <div>
                         <label style="font-size: 11px; font-weight: bold;">Register Number *</label>
-                        <input type="text" id="sRegNo" required placeholder="e.g. 26SU1001 or 26SP2001" style="text-transform: uppercase;">
+                        <input type="text" id="sRegNo" required placeholder="e.g. 26SU2460001 or 26SP2001" style="text-transform: uppercase;">
                     </div>
                     <div>
                         <label style="font-size: 11px; font-weight: bold;">Roll Number (Optional)</label>
-                        <input type="text" id="sRollNo" placeholder="e.g. 21BCA001">
+                        <input type="text" id="sRollNo" placeholder="e.g. 23435">
                     </div>
                     <div>
                         <label style="font-size: 11px; font-weight: bold;">Email Address (Optional)</label>
@@ -207,25 +207,24 @@
     <div id="printableLabRecord" class="hidden"></div>
 
     <script>
-        // EMBEDDED EXTRACTED COLLEGE LOGO
-        const COLLEGE_LOGO_B64 = "https://i.ibb.co/68v8L54/hindustan-logo.png";
+        // EMBEDDED SELF-CONTAINED HITS SVG LOGO DATA-URI
+        const COLLEGE_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 130" width="100%" height="100%"><g fill="%23d97706"><circle cx="50" cy="50" r="42" stroke="%23ea580c" stroke-width="6" fill="none"/><circle cx="50" cy="50" r="30" fill="%23059669"/><text x="50" y="55" font-size="10" font-family="Arial" font-weight="bold" fill="white" text-anchor="middle">HITS</text></g><text x="110" y="52" font-size="34" font-family="Arial" font-weight="900" fill="%23000000" letter-spacing="2">HINDUSTAN</text><text x="110" y="80" font-size="14" font-family="Arial" font-weight="bold" fill="%23111827" letter-spacing="1">INSTITUTE OF TECHNOLOGY %26 SCIENCE</text><text x="110" y="102" font-size="12" font-family="Arial" font-weight="bold" fill="%23374151" letter-spacing="0.5">(DEEMED TO BE UNIVERSITY)</text></svg>`;
 
         let courseConfig = {
-            code: "ACA31005",
-            name: "OBJECT ORIENTED PROGRAMMING"
+            code: "BCA41001",
+            name: "PROBLEM SOLVING PROGRAMMING"
         };
 
         let questionBank = {
             c: [
-                { title: "Reads an integer output and display it", code: `#include <stdio.h>\nint main() {\n    int number = 10;\n    printf("You entered: %d", number);\n    return 0;\n}`, sampleInput: "10", expectedOutput: "You entered: 10" },
-                { title: "Find largest number using Conditional statement", code: `#include <stdio.h>\nint main() {\n    printf("3.9 is the largest number.");\n    return 0;\n}`, sampleInput: "None", expectedOutput: "3.9 is the largest number." }
+                { title: "Reads an integer output and display it", code: `#include <stdio.h>\nint main()\n{\nprintf("10");\nreturn 0;\n}`, sampleInput: "10", expectedOutput: "10" }
             ],
             java: [],
             python: []
         };
         let student = null, activeStudentLang = "c", activeStudentIndex = 0, savedRecords = [], currentExecutionPassed = false, validatedActualOutput = "";
 
-        // SAFE PAGE INITIALIZER
+        // PAGE INITIALIZER
         window.onload = function() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -248,8 +247,8 @@
         };
 
         function updateCourseConfig() {
-            courseConfig.code = document.getElementById('adminCourseCode').value.trim() || "ACA31005";
-            courseConfig.name = document.getElementById('adminCourseName').value.trim() || "OBJECT ORIENTED PROGRAMMING";
+            courseConfig.code = document.getElementById('adminCourseCode').value.trim() || "BCA41001";
+            courseConfig.name = document.getElementById('adminCourseName').value.trim() || "PROBLEM SOLVING PROGRAMMING";
         }
 
         function triggerCodeFileUpload() { document.getElementById('codeFileInput').click(); }
@@ -429,7 +428,6 @@
             }
         }
 
-        // GENERATE PROCEDURE AUTOMATICALLY FROM CODE
         function generateProcedureFromCode(code) {
             let steps = ["1. Start the program execution."];
             let stepNum = 2;
@@ -452,7 +450,6 @@
             return steps.join("\n");
         }
 
-        // GENERATE FLOWCHART DIAGRAM AUTOMATICALLY FROM CODE
         function generateFlowchartFromCode(code) {
             let blocks = ["[START]"];
             if (code.includes("int") || code.includes("double") || code.includes("String")) {
@@ -471,10 +468,9 @@
             blocks.push("[Display Output Results]");
             blocks.push("[END]");
 
-            return blocks.join("  ➔  ");
+            return blocks.join(" ➔ ");
         }
 
-        // SAVE RECORD & RECORD EXECUTION DATE FOR INDEX PAGE
         function saveRecord() {
             if (!currentExecutionPassed) {
                 alert("Validation Failed! You must click Run Program and achieve a PASSED test case before saving.");
@@ -498,7 +494,7 @@
             alert(`Exercise Saved! Recorded Completion Date: ${currentDate}`);
         }
 
-        // GENERATE OFFICIAL LAB RECORD DOCUMENT WITH EMBEDDED LOGO, AIM, PROCEDURE, FLOWCHART, CODE, OUTPUT & RESULT
+        // GENERATE CLEAN PDF RECORD WITH SVG LOGO AND MONOCHROME BOXES
         function generateLabRecordDocument() {
             if (savedRecords.length === 0) { alert("Save at least one completed exercise first!"); return; }
             const printDiv = document.getElementById('printableLabRecord');
@@ -506,7 +502,9 @@
             let html = `
                 <!-- PAGE 1: COVER PAGE -->
                 <div class="page-break" style="padding: 40px; text-align: center; font-family: 'Times New Roman', serif;">
-                    <img src="${COLLEGE_LOGO_B64}" style="max-width: 320px; margin-bottom: 20px;" alt="Hindustan Logo">
+                    <div style="max-width: 480px; margin: 0 auto 20px auto;">
+                        <img src="${COLLEGE_LOGO_SVG}" style="width: 100%; height: auto;" alt="Hindustan Logo">
+                    </div>
                     
                     <p style="font-size: 13pt; font-weight: bold; margin-top: 25px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
                     <p style="font-size: 13pt; font-weight: bold; margin-top: 5px;">BACHELOR OF COMPUTER APPLICATIONS</p>
@@ -525,7 +523,9 @@
                 <!-- PAGE 2: BONAFIDE CERTIFICATE PAGE -->
                 <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif;">
                     <div style="text-align: center;">
-                        <img src="${COLLEGE_LOGO_B64}" style="max-width: 280px; margin-bottom: 20px;" alt="Hindustan Logo">
+                        <div style="max-width: 420px; margin: 0 auto 20px auto;">
+                            <img src="${COLLEGE_LOGO_SVG}" style="width: 100%; height: auto;" alt="Hindustan Logo">
+                        </div>
                         <p style="font-size: 13pt; font-weight: bold;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
                         <p style="font-size: 13pt; font-weight: bold; margin-top: 5px;">BACHELOR OF COMPUTER APPLICATIONS</p>
                         <p style="font-size: 12pt; font-weight: bold; margin-top: 5px;">(SEMESTER – II)</p>
@@ -554,7 +554,7 @@
                     </h2>
                     <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10pt;" border="1">
                         <thead>
-                            <tr style="background-color: #f2f2f2;">
+                            <tr>
                                 <th style="padding: 8px; width: 8%;">S.NO</th>
                                 <th style="padding: 8px; width: 18%;">DATE</th>
                                 <th style="padding: 8px;">NAME OF THE EXPERIMENT</th>
@@ -587,7 +587,7 @@
                     <h2 style="text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px;">STAFF EVALUATION SHEET</h2>
                     <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt;" border="1">
                         <thead>
-                            <tr style="background-color: #f2f2f2;">
+                            <tr>
                                 <th style="padding: 6px;">S.NO</th>
                                 <th style="padding: 6px;">PROGRAM TITLE</th>
                                 <th style="padding: 6px;">AIM (2)</th>
@@ -620,7 +620,7 @@
                 </div>
             `;
 
-            // PAGE 5+: INDIVIDUAL EXERCISE PAGES WITH AIM -> PROCEDURE -> FLOWCHART -> CODE -> OUTPUT -> RESULT
+            // PAGE 5+: INDIVIDUAL EXERCISES (CLEAN MONOCHROME)
             savedRecords.forEach((rec, i) => {
                 const autoProcedure = generateProcedureFromCode(rec.code);
                 const autoFlowchart = generateFlowchartFromCode(rec.code);
@@ -633,21 +633,21 @@
                         <p style="margin-bottom: 10px;">To write a program that implements ${rec.title.toLowerCase()} and displays output.</p>
                         
                         <p style="font-weight: bold; margin-top: 12px;">Procedure / Algorithm:</p>
-                        <pre style="font-family: 'Times New Roman', serif; white-space: pre-wrap; font-size: 10pt; line-height: 1.5; margin-bottom: 10px;">${autoProcedure}</pre>
+                        <pre style="font-family: 'Times New Roman', serif; white-space: pre-wrap; font-size: 10pt; line-height: 1.5; margin-bottom: 10px; background: transparent; border: none; padding: 0;">${autoProcedure}</pre>
                         
                         <p style="font-weight: bold; margin-top: 12px;">Flowchart:</p>
-                        <div style="background: #f1f5f9; padding: 10px; border: 1px solid #cbd5e1; font-family: monospace; font-size: 9pt; margin-bottom: 15px; border-radius: 4px;">
+                        <div style="background: transparent; padding: 10px; border: 1px solid #000000; font-family: monospace; font-size: 9pt; margin-bottom: 15px; color: #000000;">
                             ${autoFlowchart}
                         </div>
 
                         <p style="font-weight: bold; margin-top: 12px;">Coding:</p>
-                        <pre style="background: #f8f9fa; padding: 10px; font-size: 9pt; border: 1px solid #ccc; white-space: pre-wrap; font-family: monospace; margin-bottom: 10px;">${rec.code}</pre>
+                        <pre style="background: transparent; padding: 10px; font-size: 9pt; border: 1px solid #000000; white-space: pre-wrap; font-family: monospace; margin-bottom: 10px; color: #000000;">${rec.code}</pre>
                         
                         <p style="font-weight: bold; margin-top: 12px;">Output:</p>
-                        <pre style="background: #e8f5e9; padding: 10px; font-size: 9pt; border: 1px solid #81c784; white-space: pre-wrap; font-family: monospace; margin-bottom: 10px;">${rec.output}</pre>
+                        <pre style="background: transparent; padding: 10px; font-size: 9pt; border: 1px solid #000000; white-space: pre-wrap; font-family: monospace; margin-bottom: 10px; color: #000000;">${rec.output}</pre>
                         
                         <p style="font-weight: bold; margin-top: 12px;">Result:</p>
-                        <p>Thus, the program executed successfully.</p>
+                        <p style="margin-bottom: 30px;">Thus, the program executed successfully.</p>
                         
                         <div class="record-footer">Student Name: ${student.name} | Register No: ${student.regNo} | Completed: ${rec.date}</div>
                     </div>
