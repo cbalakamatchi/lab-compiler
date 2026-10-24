@@ -252,7 +252,6 @@
     <div id="printableLabRecord" class="hidden"></div>
 
     <script>
-        // VECTOR SVG LOGO DATA URI
         const COLLEGE_LOGO_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 120' width='600' height='120'><rect width='100%' height='100%' fill='none'/><g transform='translate(10,10)'><circle cx='50' cy='50' r='45' fill='%23f97316'/><circle cx='50' cy='50' r='30' fill='%23059669'/><text x='50' y='56' font-size='12' font-family='Arial, sans-serif' font-weight='bold' fill='white' text-anchor='middle'>HITS</text></g><text x='130' y='52' font-size='32' font-family='Arial, sans-serif' font-weight='900' fill='%23000000'>HINDUSTAN</text><text x='130' y='75' font-size='14' font-family='Arial, sans-serif' font-weight='bold' fill='%231f2937'>INSTITUTE OF TECHNOLOGY %26 SCIENCE</text><text x='130' y='95' font-size='12' font-family='Arial, sans-serif' font-weight='bold' fill='%234b5563'>(DEEMED TO BE UNIVERSITY)</text></svg>";
 
         let courseConfig = {
@@ -269,7 +268,7 @@
         };
         let student = null, activeStudentLang = "c", activeStudentIndex = 0, savedRecords = [], currentExecutionPassed = false, validatedActualOutput = "";
 
-        // INITIALIZER ROUTINE
+        // COMPACT URL RESOLVER & PAGE INITIALIZER
         window.onload = function() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -278,8 +277,9 @@
                     const decodedStr = decodeURIComponent(escape(atob(dataParam)));
                     const parsed = JSON.parse(decodedStr);
                     
-                    questionBank = parsed.questionBank || parsed;
-                    if (parsed.courseConfig) courseConfig = parsed.courseConfig;
+                    if (parsed.c) questionBank.c = parsed.c;
+                    else if (parsed.questionBank) questionBank = parsed.questionBank;
+                    if (parsed.cc) courseConfig = parsed.cc;
                     
                     document.getElementById('adminPortalView').classList.add('hidden');
                     document.getElementById('studentPortalView').classList.remove('hidden');
@@ -313,7 +313,6 @@
                 reader.onload = function(evt) {
                     const content = evt.target.result;
                     
-                    // IF JSON ARRAY OR OBJECT
                     if (file.name.endsWith('.json')) {
                         try {
                             const parsed = JSON.parse(content);
@@ -324,7 +323,6 @@
                             }
                         } catch(err) {}
                     } else {
-                        // INDIVIDUAL C / JAVA / PYTHON FILE
                         questionBank.c.push({
                             title: file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
                             code: content,
@@ -355,9 +353,21 @@
             document.getElementById('loadedStatsBadge').textContent = `${questionBank.c.length} Programs`;
         }
 
+        // LIGHTWEIGHT LINK GENERATION (STRIPS HEAVY SOURCE CODE TO PREVENT 414 URI TOO LONG ERRORS)
         function generateAndCopyStudentLink() {
             updateCourseConfig();
-            const payload = { questionBank, courseConfig };
+            
+            // Extract lightweight metadata only
+            const compactQuestions = questionBank.c.map(q => ({
+                title: q.title,
+                expectedOutput: q.expectedOutput,
+                sampleInput: q.sampleInput || "None"
+            }));
+
+            const payload = { 
+                c: compactQuestions, 
+                cc: courseConfig 
+            };
             
             const jsonString = JSON.stringify(payload);
             const encoded = btoa(unescape(encodeURIComponent(jsonString)));
@@ -370,10 +380,10 @@
                 navigator.clipboard.writeText(url).then(() => {
                     alert("Student practice URL generated and copied to clipboard!");
                 }).catch(() => {
-                    alert("Link generated! You can copy it directly from the green banner.");
+                    alert("Link generated! Copy directly from the green banner.");
                 });
             } else {
-                alert("Link generated! You can copy it directly from the green banner.");
+                alert("Link generated! Copy directly from the green banner.");
             }
         }
 
@@ -430,12 +440,10 @@
             document.getElementById('studentMainContent').classList.remove('hidden');
             document.getElementById('displayStudentName').textContent = `${student.name} (${student.regNo})`;
             
-            // RENDER ALL UPLOADED PROGRAMS ON STUDENT PAGE
             renderStudentQuestionList();
             renderActiveStudentQuestion();
         }
 
-        // RENDER THE FULL LIST OF UPLOADED PROGRAMS FOR STUDENTS
         function renderStudentQuestionList() {
             const container = document.getElementById('studentQuestionList');
             const countBadge = document.getElementById('studentExerciseCount');
@@ -597,7 +605,6 @@
             alert(`Exercise Saved! Recorded Completion Date: ${currentDate}`);
         }
 
-        // GENERATE PDF RECORD WITH LOGO INCLUDED
         function generateLabRecordDocument() {
             if (savedRecords.length === 0) { alert("Save at least one completed exercise first!"); return; }
             const printDiv = document.getElementById('printableLabRecord');
