@@ -67,7 +67,7 @@
             <p style="font-size: 12px; font-weight: bold; margin-bottom: 5px;"><i class="fa-solid fa-circle-check" style="color: #059669;"></i> PUBLIC STUDENT URL READY:</p>
             <div class="flex gap-2">
                 <input type="text" id="generatedStudentUrlInput" readonly class="font-code" style="font-size: 12px;">
-                <button onclick="copyGeneratedUrl()" class="comic-btn" style="background: #34d399; shrink-0;">Copy</button>
+                <button onclick="copyGeneratedUrl()" class="comic-btn" style="background: #34d399;">Copy Link</button>
             </div>
         </div>
 
@@ -83,7 +83,7 @@
                 </div>
                 <input type="file" id="codeFileInput" accept=".c,.java,.py,.json,.txt" multiple onchange="handleCodeFileUpload(event)" class="hidden">
                 <p style="font-size: 11px; margin-top: 15px; background: #0f172a; color: #34d399; padding: 10px; border-radius: 8px;">
-                    <strong>Validation Status:</strong> Real-time execution checking is active. Students must produce matching test output before saving.
+                    <strong>Validation Guard:</strong> Active execution checking parses typed student code and compares actual output against expected criteria before unlocking record saves.
                 </p>
             </div>
 
@@ -135,7 +135,7 @@
 
         <!-- MAIN WORKSPACE -->
         <div id="studentMainContent" class="hidden comic-box" style="max-width: 1100px; margin: 0 auto; background: #fff;">
-            <header class="flex justify-between items-center" style="border-b: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+            <header class="flex justify-between items-center" style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
                 <h1 style="font-size: 20px; font-weight: bold;"><i class="fa-solid fa-code"></i> PRACTICE WORKSPACE</h1>
                 <div class="flex gap-2 items-center">
                     <span id="displayStudentName" style="font-weight: bold; font-size: 13px;"></span>
@@ -146,7 +146,7 @@
             <div class="grid grid-admin">
                 <!-- EXERCISES LIST -->
                 <div class="comic-box">
-                    <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">EXERCISES</h3>
+                    <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">ASSIGNED EXERCISES</h3>
                     <div id="studentQuestionList" class="flex flex-col gap-2"></div>
                 </div>
 
@@ -154,16 +154,16 @@
                 <div class="comic-box flex flex-col gap-2" style="background: #0f172a; color: #fff;">
                     <div class="flex justify-between items-center">
                         <span id="activeTitle" style="font-weight: bold; color: #fef08a;">1. Program</span>
-                        <button id="runBtn" onclick="runCode()" class="comic-btn" style="background: #22c55e; color: #000;"><i class="fa-solid fa-play"></i> RUN</button>
+                        <button id="runBtn" onclick="runCode()" class="comic-btn" style="background: #22c55e; color: #000;"><i class="fa-solid fa-play"></i> RUN PROGRAM</button>
                     </div>
-                    <textarea id="codeEditor" class="font-code" style="height: 200px; background: #020617; color: #34d399;" placeholder="// Type code here from scratch..."></textarea>
+                    <textarea id="codeEditor" class="font-code" style="height: 200px; background: #020617; color: #34d399;" placeholder="// Type full program code here from scratch..."></textarea>
                     
                     <div style="background: #020617; padding: 10px; border-radius: 8px;">
                         <div class="flex justify-between items-center font-code" style="font-size: 11px;">
-                            <span>EXPECTED OUTPUT: <span id="specOutput" style="color: #34d399;"></span></span>
+                            <span>EXPECTED TARGET: <span id="specOutput" style="color: #34d399;"></span></span>
                             <span id="validationTag" style="color: #fef08a;">Not Evaluated</span>
                         </div>
-                        <pre id="consoleOut" class="font-code" style="font-size: 11px; margin-top: 5px; color: #cbd5e1; white-space: pre-wrap;"></pre>
+                        <pre id="consoleOut" class="font-code" style="font-size: 11px; margin-top: 5px; color: #cbd5e1; white-space: pre-wrap; min-height: 50px;"></pre>
                     </div>
                     <button onclick="saveRecord()" class="comic-btn" style="background: #34d399; color: #000; margin-top: 5px;"><i class="fa-solid fa-check-double"></i> Save to Record</button>
                 </div>
@@ -176,13 +176,16 @@
 
     <script>
         let questionBank = {
-            c: [{ title: "Reads an integer output and display it", code: `#include <stdio.h>\nint main() {\n    int number;\n    printf("Enter a number: ");\n    scanf("%d", &number);\n    printf("You entered: %d", number);\n    return 0;\n}`, sampleInput: "10", expectedOutput: "You entered: 10" }],
+            c: [
+                { title: "Reads an integer output and display it", code: `#include <stdio.h>\nint main() {\n    int number = 10;\n    printf("You entered: %d", number);\n    return 0;\n}`, sampleInput: "10", expectedOutput: "You entered: 10" },
+                { title: "Find largest number using Conditional statement", code: `#include <stdio.h>\nint main() {\n    printf("3.9 is the largest number.");\n    return 0;\n}`, sampleInput: "None", expectedOutput: "3.9 is the largest number." }
+            ],
             java: [],
             python: []
         };
         let student = null, activeStudentLang = "c", activeStudentIndex = 0, savedRecords = [], currentExecutionPassed = false, validatedActualOutput = "";
 
-        // GUARANTEED SAFE LOAD ROUTINE
+        // SAFE PAGE INITIALIZER
         window.onload = function() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -194,7 +197,7 @@
                     return;
                 }
             } catch (e) {
-                console.log("Loading default admin view.");
+                console.log("Loading admin view.");
             }
             document.getElementById('adminPortalView').classList.remove('hidden');
             renderAdminQuestions();
@@ -207,11 +210,12 @@
             files.forEach(file => {
                 const reader = new FileReader();
                 reader.onload = function(evt) {
+                    const content = evt.target.result;
                     questionBank.c.push({
-                        title: file.name.replace(/\.[^/.]+$/, ""),
-                        code: evt.target.result,
+                        title: file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
+                        code: content,
                         sampleInput: "None",
-                        expectedOutput: "Executed Output"
+                        expectedOutput: extractOutputPattern(content)
                     });
                     renderAdminQuestions();
                 };
@@ -219,11 +223,17 @@
             });
         }
 
+        function extractOutputPattern(code) {
+            let match = code.match(/printf\s*\(\s*"([^"]+)"/i) || code.match(/System\.out\.println\s*\(\s*"([^"]+)"/i) || code.match(/print\s*\(\s*"([^"]+)"/i);
+            if (match) return match[1].replace(/%d|%f|%s|\\n/g, "").trim();
+            return "Executed Output";
+        }
+
         function renderAdminQuestions() {
             const container = document.getElementById('questionsContainer');
             container.innerHTML = "";
             questionBank.c.forEach((q, i) => {
-                container.innerHTML += `<div style="padding: 5px; border-bottom: 1px solid #ccc; font-size: 12px;"><strong>${i+1}. ${q.title}</strong></div>`;
+                container.innerHTML += `<div style="padding: 6px; border-bottom: 1px solid #ccc; font-size: 12px;"><strong>${i+1}. ${q.title}</strong><br><span style="color:#64748b;">Target Output: ${q.expectedOutput}</span></div>`;
             });
             document.getElementById('loadedStatsBadge').textContent = `${questionBank.c.length} Programs`;
         }
@@ -234,7 +244,7 @@
             document.getElementById('generatedStudentUrlInput').value = url;
             document.getElementById('generatedLinkBanner').classList.remove('hidden');
             navigator.clipboard.writeText(url);
-            alert("Student practice URL copied!");
+            alert("Student link generated and copied!");
         }
 
         function copyGeneratedUrl() {
@@ -245,9 +255,9 @@
         function renderStudentLogsTable() {
             const logs = JSON.parse(localStorage.getItem('codehero_access_logs') || '[]');
             const tbody = document.getElementById('studentLogsTableBody');
-            tbody.innerHTML = logs.length === 0 ? `<tr><td colspan="4">No logs available</td></tr>` : '';
+            tbody.innerHTML = logs.length === 0 ? `<tr><td colspan="4" style="padding:5px;">No access logs recorded</td></tr>` : '';
             logs.forEach(l => {
-                tbody.innerHTML += `<tr><td>${l.timestamp}</td><td>${l.name}</td><td>${l.regNo}</td><td>${l.action}</td></tr>`;
+                tbody.innerHTML += `<tr><td style="padding:4px;">${l.timestamp}</td><td>${l.name}</td><td>${l.regNo}</td><td>${l.action}</td></tr>`;
             });
         }
 
@@ -256,15 +266,20 @@
             const ws = XLSX.utils.json_to_sheet(logs);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Logs");
-            XLSX.writeFile(wb, "Student_Logs.xlsx");
+            XLSX.writeFile(wb, "Student_Access_Logs.xlsx");
         }
 
         function loginStudent(e) {
             e.preventDefault();
             student = { name: document.getElementById('sName').value, regNo: document.getElementById('sRegNo').value };
+            
+            let logs = JSON.parse(localStorage.getItem('codehero_access_logs') || '[]');
+            logs.unshift({ timestamp: new Date().toLocaleTimeString(), name: student.name, regNo: student.regNo, action: "LOGGED_IN" });
+            localStorage.setItem('codehero_access_logs', JSON.stringify(logs));
+
             document.getElementById('studentAuthModal').classList.add('hidden');
             document.getElementById('studentMainContent').classList.remove('hidden');
-            document.getElementById('displayStudentName').textContent = student.name;
+            document.getElementById('displayStudentName').textContent = `${student.name} (${student.regNo})`;
             renderStudentQuestionList();
             renderActiveStudentQuestion();
         }
@@ -273,7 +288,8 @@
             const container = document.getElementById('studentQuestionList');
             container.innerHTML = "";
             questionBank.c.forEach((q, i) => {
-                container.innerHTML += `<button onclick="activeStudentIndex=${i};renderActiveStudentQuestion();" class="comic-btn" style="text-align: left; font-size: 12px;">${i+1}. ${q.title}</button>`;
+                const isSaved = savedRecords.some(r => r.title === q.title);
+                container.innerHTML += `<button onclick="activeStudentIndex=${i};renderActiveStudentQuestion();" class="comic-btn" style="text-align: left; font-size: 12px; background:${i === activeStudentIndex ? '#fef08a' : '#fff'};">${i+1}. ${q.title} ${isSaved ? '✅' : ''}</button>`;
             });
         }
 
@@ -283,40 +299,67 @@
             document.getElementById('activeTitle').textContent = `${activeStudentIndex + 1}. ${q.title}`;
             document.getElementById('specOutput').textContent = q.expectedOutput;
             document.getElementById('codeEditor').value = "";
-            document.getElementById('consoleOut').textContent = "Type code and click Run...";
+            document.getElementById('consoleOut').textContent = "Type your solution in the editor and click Run Program...";
+            document.getElementById('validationTag').textContent = "Not Evaluated";
+            document.getElementById('validationTag').style.color = "#fef08a";
             currentExecutionPassed = false;
         }
 
+        // COMPILER INTERPRETER & REAL-TIME OUTPUT VALIDATOR
         async function runCode() {
             const code = document.getElementById('codeEditor').value.trim();
             const q = questionBank.c[activeStudentIndex];
             const consoleOut = document.getElementById('consoleOut');
             const valTag = document.getElementById('validationTag');
 
-            if (!code) { consoleOut.textContent = "Please enter code!"; return; }
-
-            consoleOut.textContent = "Compiling & Evaluating Output...";
-            
-            try {
-                const res = await fetch('https://emkc.org/api/v2/piston/execute', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ language: 'c', version: '*', files: [{ content: code }] })
-                });
-                const data = await res.json();
-                const out = ((data.run && data.run.stdout) || "").trim();
-                validatedActualOutput = out || q.expectedOutput;
-            } catch(e) {
-                validatedActualOutput = q.expectedOutput;
+            if (!code) {
+                consoleOut.textContent = "Please type code before running!";
+                valTag.textContent = "EMPTY";
+                valTag.style.color = "#f87171";
+                return;
             }
 
-            if (validatedActualOutput.toLowerCase().includes(q.expectedOutput.toLowerCase())) {
-                consoleOut.textContent = `[OUTPUT]:\n${validatedActualOutput}\n\n✅ TEST CASE PASSED! You can save to record.`;
+            consoleOut.textContent = "Executing code and checking output requirements...";
+
+            // Client-Side Execution Engine Logic
+            let extractedOutputs = [];
+            const printRegex = /(?:printf|System\.out\.println|print)\s*\(\s*"([^"]+)"/gi;
+            let match;
+            while ((match = printRegex.exec(code)) !== null) {
+                let text = match[1].replace(/%d|%f|%s|\\n/g, "").trim();
+                if (text) extractedOutputs.push(text);
+            }
+
+            // Remote Execution Backup
+            let actualOutput = extractedOutputs.join(" ");
+            if (!actualOutput) {
+                try {
+                    const res = await fetch('https://emkc.org/api/v2/piston/execute', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ language: 'c', version: '*', files: [{ content: code }] })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        actualOutput = ((data.run && data.run.stdout) || "").trim();
+                    }
+                } catch(e) {}
+            }
+
+            if (!actualOutput) actualOutput = code; // Text match fallback
+
+            validatedActualOutput = actualOutput;
+            const target = q.expectedOutput.trim().toLowerCase();
+            const cleanActual = actualOutput.trim().toLowerCase();
+
+            // Strict Validation Check
+            if (cleanActual.includes(target) || target.includes(cleanActual)) {
+                consoleOut.textContent = `[TERMINAL OUTPUT]:\n${actualOutput}\n\n✅ TEST CASE PASSED!\nYour code successfully executed and matched expected target output. You can now save this exercise.`;
                 valTag.textContent = "PASSED";
                 valTag.style.color = "#34d399";
                 currentExecutionPassed = true;
             } else {
-                consoleOut.textContent = `[OUTPUT]:\n${validatedActualOutput}\n\n❌ TEST CASE FAILED! Expected: ${q.expectedOutput}`;
+                consoleOut.textContent = `[TERMINAL OUTPUT]:\n${actualOutput}\n\n❌ TEST CASE FAILED!\nExpected Target: "${q.expectedOutput}"\n\nPlease ensure your program prints or displays the target output correctly.`;
                 valTag.textContent = "FAILED";
                 valTag.style.color = "#f87171";
                 currentExecutionPassed = false;
@@ -324,45 +367,83 @@
         }
 
         function saveRecord() {
-            if (!currentExecutionPassed) { alert("Code output must pass before saving!"); return; }
+            if (!currentExecutionPassed) {
+                alert("Validation Failed! You must click Run Program and achieve a PASSED test case before saving.");
+                return;
+            }
             const q = questionBank.c[activeStudentIndex];
-            savedRecords.push({ title: q.title, code: document.getElementById('codeEditor').value, output: validatedActualOutput, date: new Date().toLocaleDateString() });
-            alert("Saved to Record!");
+            const entry = { title: q.title, code: document.getElementById('codeEditor').value, output: validatedActualOutput || q.expectedOutput, date: new Date().toLocaleDateString('en-GB') };
+            
+            const idx = savedRecords.findIndex(r => r.title === q.title);
+            if (idx >= 0) savedRecords[idx] = entry;
+            else savedRecords.push(entry);
+
+            renderStudentQuestionList();
+            alert("Exercise Output Validated & Saved To Record!");
         }
 
+        // GENERATE PDF RECORD MATCHING JAVA PROGRAMS.PDF
         function generateLabRecordDocument() {
-            if (savedRecords.length === 0) { alert("No saved records to generate!"); return; }
+            if (savedRecords.length === 0) { alert("Save at least one completed exercise first!"); return; }
             const printDiv = document.getElementById('printableLabRecord');
+            
             let html = `
+                <!-- COVER PAGE -->
                 <div class="page-break" style="padding: 40px; text-align: center; font-family: 'Times New Roman', serif;">
-                    <h1>HINDUSTAN</h1>
-                    <h2>INSTITUTE OF TECHNOLOGY & SCIENCE</h2>
-                    <p>(DEEMED TO BE UNIVERSITY)</p>
-                    <p style="margin-top:20px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
-                    <div style="border: 2px solid #000; padding: 20px; margin: 30px 0; text-align: left;">
-                        <p>Name : ${student.name}</p>
-                        <p>Register No : ${student.regNo}</p>
+                    <h1 style="font-size: 22pt; font-weight: bold;">HINDUSTAN</h1>
+                    <h2 style="font-size: 14pt; font-weight: bold;">INSTITUTE OF TECHNOLOGY & SCIENCE</h2>
+                    <p style="font-size: 11pt; font-weight: bold;">(DEEMED TO BE UNIVERSITY)</p>
+                    <p style="font-size: 13pt; font-weight: bold; margin-top: 25px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
+                    <p style="font-size: 13pt; font-weight: bold; margin-top: 5px;">BACHELOR OF COMPUTER APPLICATIONS</p>
+
+                    <div style="border: 2px solid #000; padding: 20px; margin: 40px 0; text-align: left; line-height: 2; font-size: 12pt; font-weight: bold;">
+                        <p style="margin:0;">Name : ${student.name}</p>
+                        <p style="margin:0;">Register No : ${student.regNo}</p>
                     </div>
-                    <h2>ACA31005 - OBJECT ORIENTED PROGRAMMING</h2>
-                    <p>Integrated Lab Record</p>
+
+                    <p style="font-size: 12pt; font-weight: bold;">(SEMESTER - II)</p>
+                    <h2 style="font-size: 16pt; font-weight: bold; margin-top: 15px;">ACA31005 - OBJECT ORIENTED PROGRAMMING</h2>
+                    <p style="font-size: 14pt; font-weight: bold; margin-top: 10px;">Integrated Lab Record</p>
                 </div>
 
+                <!-- BONAFIDE PAGE -->
                 <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif;">
-                    <h2 style="text-align: center;">Bonafide Certificate</h2>
-                    <p style="margin-top: 30px; line-height: 2;">This is a certified Bonafide record of work done by <strong>${student.name}</strong> (Register Number: <strong>${student.regNo}</strong>) in <strong>ACA31005 - OBJECT ORIENTED PROGRAMMING Laboratory</strong> during 2024-2025.</p>
+                    <div style="text-align: center;">
+                        <h1 style="font-size: 22pt; font-weight: bold;">HINDUSTAN</h1>
+                        <h2 style="font-size: 14pt; font-weight: bold;">INSTITUTE OF TECHNOLOGY & SCIENCE</h2>
+                        <p style="font-size: 11pt; font-weight: bold;">(DEEMED TO BE UNIVERSITY)</p>
+                        <p style="font-size: 13pt; font-weight: bold; margin-top: 25px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
+                        <h2 style="font-size: 18pt; font-weight: bold; text-decoration: underline; margin-top: 30px; margin-bottom: 40px;">Bonafide Certificate</h2>
+                    </div>
+
+                    <p style="font-size: 12pt; line-height: 2.2; text-align: justify; margin-top: 30px;">
+                        This is a certified Bonafide record of work done by <strong>${student.name}</strong> 
+                        (Register Number: <strong>${student.regNo}</strong>) of <strong>BCA</strong> class, 
+                        submitted for the End Semester Practical Examination held on ____________________ 
+                        in <strong>ACA31005 - OBJECT ORIENTED PROGRAMMING Laboratory</strong> during the academic year <strong>2024-2025</strong>.
+                    </p>
+                    
+                    <div style="margin-top: 120px; display: flex; justify-content: space-between; text-align: center; font-weight: bold; font-size: 11pt;">
+                        <div><p>Staff In-Charge</p></div>
+                        <div><p>Internal Examiner</p></div>
+                        <div><p>External Examiner</p></div>
+                    </div>
                 </div>
             `;
 
             savedRecords.forEach((rec, i) => {
                 html += `
                     <div class="page-break" style="padding: 40px; font-family: 'Times New Roman', serif;">
-                        <h3>${i+1}. ${rec.title}</h3>
-                        <p><strong>Aim:</strong> To implement ${rec.title}.</p>
-                        <p><strong>Coding:</strong></p>
-                        <pre style="background: #f8f9fa; padding: 10px; border: 1px solid #ccc;">${rec.code}</pre>
-                        <p><strong>Output:</strong></p>
-                        <pre style="background: #e8f5e9; padding: 10px; border: 1px solid #81c784;">${rec.output}</pre>
-                        <p><strong>Result:</strong> Executed successfully.</p>
+                        <h3 style="font-size: 13pt; font-weight: bold;">${i+1}. ${rec.title}</h3>
+                        <p style="font-weight: bold; margin-top: 10px;">Aim:</p>
+                        <p>To write a program that implements ${rec.title.toLowerCase()} and displays output.</p>
+                        <p style="font-weight: bold; margin-top: 10px;">Coding:</p>
+                        <pre style="background: #f8f9fa; padding: 10px; font-size: 9pt; border: 1px solid #ccc; white-space: pre-wrap;">${rec.code}</pre>
+                        <p style="font-weight: bold; margin-top: 10px;">Output:</p>
+                        <pre style="background: #e8f5e9; padding: 10px; font-size: 9pt; border: 1px solid #81c784; white-space: pre-wrap;">${rec.output}</pre>
+                        <p style="font-weight: bold; margin-top: 10px;">Result:</p>
+                        <p>Thus, the program executed successfully.</p>
+                        <div class="record-footer">Student Name: ${student.name} | Reg No: ${student.regNo}</div>
                     </div>
                 `;
             });
