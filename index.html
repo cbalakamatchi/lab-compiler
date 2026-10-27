@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hindustan University - Code Validator & Record Generator</title>
+    <title>Hindustan University - Lab Record Generator & Multi-Compiler</title>
     
     <!-- Dependencies -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <!-- Mammoth.js for Word .docx Document parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <!-- html2pdf.js for Direct PDF file download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -29,7 +33,7 @@
         .grid { display: grid; }
         .grid-2 { grid-template-columns: 1fr 1fr; }
         .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-        .grid-admin { grid-template-columns: 1.1fr 1.3fr; gap: 15px; }
+        .grid-admin { grid-template-columns: 1.15fr 1.25fr; gap: 15px; }
         
         .hidden { display: none !important; }
         .w-full { width: 100%; }
@@ -37,8 +41,8 @@
         
         textarea, input, select { border: 2px solid #000; border-radius: 8px; padding: 8px; outline: none; width: 100%; font-size: 13px; }
         textarea:focus, input:focus, select:focus { border-color: #9333ea; }
-        
-        /* STRICT PDF PRINT MEDIA CSS */
+
+        /* STRICT PDF PRINT / EXPORT MEDIA CSS */
         @media print {
             @page {
                 size: A4 portrait;
@@ -72,7 +76,6 @@
             }
             pre, code, div, p, table, th, td {
                 background: transparent !important;
-                background-color: transparent !important;
                 box-shadow: none !important;
             }
             .flowchart-svg-container svg {
@@ -95,17 +98,18 @@
 </head>
 <body>
 
-    <!-- ADMIN PORTAL VIEW -->
-    <div id="adminPortalView" class="comic-box" style="background-color: #fff; max-width: 1150px; margin: 0 auto;">
-        <!-- ADMIN HEADER -->
+    <!-- ==================== FACULTY ADMIN PORTAL ==================== -->
+    <div id="adminPortalView" class="comic-box" style="background-color: #fff; max-width: 1200px; margin: 0 auto;">
+        
+        <!-- HEADER -->
         <header class="comic-box" style="background: #9333ea; color: white; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <div>
                 <h1 style="font-size: 22px; font-weight: bold;"><i class="fa-solid fa-graduation-cap"></i> FACULTY ADMIN WORKBENCH</h1>
-                <p style="font-size: 12px; opacity: 0.9;">Configure Course, Academic Metadata, Programs & Share Encrypted Student Link</p>
+                <p style="font-size: 12px; opacity: 0.9;">Configure Course, Parse Document Line-by-Line & Generate Practice Links</p>
             </div>
             <div class="flex gap-2">
-                <button id="genLinkBtn" onclick="generateAndCopyStudentLink()" class="comic-btn" style="background: #34d399; color: black;">
-                    <i class="fa-solid fa-share-nodes"></i> Generate Practice Link
+                <button onclick="generateAndCopyStudentLink()" class="comic-btn" style="background: #34d399; color: black;">
+                    <i class="fa-solid fa-share-nodes"></i> Generate Student Practice Link
                 </button>
                 <button onclick="exportStudentLogsExcel()" class="comic-btn" style="background: #22c55e; color: white;">
                     <i class="fa-solid fa-file-excel"></i> Export Logs (Excel)
@@ -113,10 +117,10 @@
             </div>
         </header>
 
-        <!-- GENERATED STUDENT URL BANNER -->
+        <!-- COMPRESSED STUDENT URL BANNER -->
         <div id="generatedLinkBanner" class="hidden comic-box" style="background: #d1fae5; border-color: #059669;">
             <p style="font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #065f46;">
-                <i class="fa-solid fa-circle-check"></i> COMPRESSED STUDENT PRACTICE URL READY:
+                <i class="fa-solid fa-circle-check"></i> STUDENT PRACTICE URL READY (COMPRESSED VIA LZ-STRING):
             </p>
             <div class="flex gap-2">
                 <input type="text" id="generatedStudentUrlInput" readonly class="font-code" style="font-size: 12px; background: #fff;">
@@ -126,15 +130,15 @@
 
         <!-- COURSE CONFIGURATION BAR -->
         <div class="comic-box" style="background: #f8fafc;">
-            <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 8px;"><i class="fa-solid fa-sliders"></i> ACADEMIC & COURSE CONFIGURATION</h3>
+            <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 8px;"><i class="fa-solid fa-sliders"></i> COURSE & ACADEMIC CONFIGURATION</h3>
             <div class="grid grid-4 gap-2">
                 <div>
-                    <label style="font-size: 11px; font-weight: bold;">Course Code</label>
+                    <label style="font-size: 11px; font-weight: bold;">Course Code *</label>
                     <input type="text" id="adminCourseCode" value="BCA41001" onchange="updateCourseConfig()">
                 </div>
                 <div>
-                    <label style="font-size: 11px; font-weight: bold;">Course Name</label>
-                    <input type="text" id="adminCourseName" value="PROBLEM SOLVING PROGRAMMING" onchange="updateCourseConfig()">
+                    <label style="font-size: 11px; font-weight: bold;">Course Name *</label>
+                    <input type="text" id="adminCourseName" value="PROBLEM SOLVING & PROGRAMMING LAB" onchange="updateCourseConfig()">
                 </div>
                 <div>
                     <label style="font-size: 11px; font-weight: bold;">Department</label>
@@ -152,68 +156,97 @@
                     <label style="font-size: 11px; font-weight: bold;">Academic Year</label>
                     <input type="text" id="adminAcaYear" value="2024 – 2025" onchange="updateCourseConfig()">
                 </div>
-                <div style="grid-column: span 2;">
-                    <label style="font-size: 11px; font-weight: bold;">Cloud Audit Webhook URL (Optional Google Sheet / Webhook)</label>
-                    <input type="url" id="adminWebhookUrl" placeholder="https://script.google.com/macros/s/.../exec" onchange="updateCourseConfig()">
+                <div>
+                    <label style="font-size: 11px; font-weight: bold;">Default Lab Language</label>
+                    <select id="adminDefaultLang" onchange="updateCourseConfig()">
+                        <option value="c">C (GCC)</option>
+                        <option value="cpp">C++ (G++)</option>
+                        <option value="java">Java (OpenJDK)</option>
+                        <option value="python">Python 3</option>
+                        <option value="sql">SQL (SQLite3)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 11px; font-weight: bold;">Cloud Audit Webhook (Optional)</label>
+                    <input type="url" id="adminWebhookUrl" placeholder="https://script.google.com/..." onchange="updateCourseConfig()">
                 </div>
             </div>
         </div>
 
-        <!-- MAIN WORKSPACE GRID -->
+        <!-- MAIN WORKSPACE -->
         <div class="grid grid-admin">
-            <!-- LEFT: UPLOAD & PROGRAM MANAGEMENT -->
+            <!-- LEFT: DOCUMENT UPLOAD & LINE-BY-LINE PARSER -->
             <div class="comic-box">
-                <h3 style="font-size: 15px; font-weight: bold; margin-bottom: 10px;"><i class="fa-solid fa-cloud-arrow-up"></i> UPLOAD / ADD EXERCISES</h3>
-                <div onclick="triggerCodeFileUpload()" style="border: 2px dashed #000; background: #fffbeb; padding: 25px; text-align: center; cursor: pointer; border-radius: 8px;">
-                    <i class="fa-solid fa-file-arrow-up" style="font-size: 32px; color: #9333ea; margin-bottom: 8px;"></i>
-                    <p style="font-weight: bold; font-size: 13px;">CLICK TO UPLOAD FILES</p>
-                    <p style="font-size: 11px; color: #64748b;">Supports .c, .cpp, .java, .py, or .json assignments</p>
-                </div>
-                <input type="file" id="codeFileInput" accept=".c,.cpp,.java,.py,.json,.txt" multiple onchange="handleCodeFileUpload(event)" class="hidden">
+                <h3 style="font-size: 15px; font-weight: bold; margin-bottom: 10px;">
+                    <i class="fa-solid fa-file-lines"></i> DOCUMENT & PROGRAM UPLOADER
+                </h3>
 
+                <!-- Document Upload Area -->
+                <div onclick="triggerDocUpload()" style="border: 2px dashed #000; background: #fffbeb; padding: 20px; text-align: center; cursor: pointer; border-radius: 8px;">
+                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 32px; color: #9333ea; margin-bottom: 6px;"></i>
+                    <p style="font-weight: bold; font-size: 13px;">UPLOAD SYLLABUS / MANUAL DOCUMENT</p>
+                    <p style="font-size: 11px; color: #64748b;">Upload .txt, .docx, .c, .cpp, .java, .py, or .json</p>
+                </div>
+                <input type="file" id="docFileInput" accept=".txt,.docx,.c,.cpp,.java,.py,.json,.sql" onchange="handleDocumentUpload(event)" class="hidden">
+
+                <!-- Line-by-line Paste Box -->
                 <div style="margin-top: 15px;">
-                    <p style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Or Add Single Exercise Manually:</p>
+                    <label style="font-size: 11px; font-weight: bold;">Or Paste Program List Line-by-Line:</label>
+                    <textarea id="documentTextArea" style="height: 110px; font-size: 12px; margin-top: 4px;" placeholder="1. Write a C program to check prime number&#10;2. Write a program to find factorial of a given number&#10;3. Write a program to implement bubble sort"></textarea>
+                    <button onclick="parseTextLineByLine()" class="comic-btn" style="background: #fef08a; width: 100%; margin-top: 6px;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Parse Document Line-by-Line
+                    </button>
+                </div>
+
+                <!-- Single Program Manual Add -->
+                <div style="margin-top: 15px; border-top: 2px dashed #ccc; padding-top: 12px;">
+                    <p style="font-size: 11px; font-weight: bold; margin-bottom: 6px;">Add Single Program Manually:</p>
                     <div class="flex flex-col gap-2">
-                        <input type="text" id="manualTitle" placeholder="Exercise Title (e.g. Find Factorial of a Number)">
+                        <input type="text" id="manualSingleTitle" placeholder="Program Title (e.g., Student Database Table Query)">
                         <div class="grid grid-2 gap-2">
-                            <select id="manualLang">
-                                <option value="c">C Language</option>
-                                <option value="python">Python</option>
-                                <option value="java">Java</option>
+                            <select id="manualSingleLang">
+                                <option value="c">C</option>
                                 <option value="cpp">C++</option>
+                                <option value="java">Java</option>
+                                <option value="python">Python</option>
+                                <option value="sql">SQL</option>
                             </select>
-                            <input type="text" id="manualSampleInput" placeholder="Standard Input (optional)">
+                            <input type="text" id="manualSingleInput" placeholder="Standard In (stdin)">
                         </div>
-                        <input type="text" id="manualTargetOutput" placeholder="Expected Target Output *">
-                        <button onclick="addManualExercise()" class="comic-btn" style="background: #fef08a;"><i class="fa-solid fa-plus"></i> Add Exercise</button>
+                        <input type="text" id="manualSingleOutput" placeholder="Expected Target Output (or leave blank for any execution)">
+                        <button onclick="addSingleProgram()" class="comic-btn" style="background: #34d399; font-size: 12px;">
+                            <i class="fa-solid fa-plus"></i> Add Single Program
+                        </button>
                     </div>
                 </div>
-
-                <p style="font-size: 11px; margin-top: 15px; background: #0f172a; color: #34d399; padding: 10px; border-radius: 8px;">
-                    <i class="fa-solid fa-shield-halved"></i> <strong>Validation Guard Active:</strong> Accepts Register Numbers prefixed with <strong>26SU</strong> or <strong>26SP</strong> or official student domain emails.
-                </p>
             </div>
 
-            <!-- RIGHT: PROGRAMS LIST & LOCAL AUDIT LOGS -->
+            <!-- RIGHT: PROGRAMS LIST & LOGS -->
             <div class="flex flex-col gap-2">
                 <div class="comic-box">
                     <div class="flex justify-between items-center" style="margin-bottom: 10px;">
-                        <h3 style="font-size: 15px; font-weight: bold;"><i class="fa-solid fa-list-check"></i> UPLOADED PROGRAMS</h3>
-                        <span id="loadedStatsBadge" style="background: #e9d5ff; padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 12px;">0 Programs</span>
+                        <div>
+                            <h3 style="font-size: 15px; font-weight: bold;"><i class="fa-solid fa-list-ol"></i> PARSED COURSE EXERCISES</h3>
+                            <span style="font-size: 11px; color: #64748b;">These will be displayed in the Student Compiler Window</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <span id="loadedStatsBadge" style="background: #e9d5ff; padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 12px;">0 Programs</span>
+                            <button onclick="clearAllPrograms()" class="comic-btn" style="background: #fee2e2; padding: 2px 6px; font-size: 10px;"><i class="fa-solid fa-trash"></i></button>
+                        </div>
                     </div>
-                    <div id="questionsContainer" style="max-height: 180px; overflow-y: auto;"></div>
+                    <div id="questionsContainer" style="max-height: 230px; overflow-y: auto;"></div>
                 </div>
 
                 <div class="comic-box">
-                    <div class="flex justify-between items-center" style="margin-bottom: 10px;">
-                        <h3 style="font-size: 15px; font-weight: bold;"><i class="fa-solid fa-users-viewfinder"></i> STUDENT AUDIT LOGS</h3>
-                        <button onclick="clearAuditLogs()" class="comic-btn" style="background: #fee2e2; padding: 3px 8px; font-size: 11px;"><i class="fa-solid fa-trash-can"></i> Clear</button>
+                    <div class="flex justify-between items-center" style="margin-bottom: 8px;">
+                        <h3 style="font-size: 14px; font-weight: bold;"><i class="fa-solid fa-users-viewfinder"></i> STUDENT AUDIT LOGS</h3>
+                        <button onclick="clearAuditLogs()" class="comic-btn" style="background: #fee2e2; padding: 2px 6px; font-size: 10px;">Clear</button>
                     </div>
-                    <div style="max-height: 180px; overflow-y: auto;">
+                    <div style="max-height: 150px; overflow-y: auto;">
                         <table style="width: 100%; text-align: left; font-size: 11px; border-collapse: collapse;">
                             <thead>
                                 <tr style="background: #fef08a; border-bottom: 2px solid #000;">
-                                    <th style="padding: 4px;">Time</th>
+                                    <th style="padding: 4px;">Timestamp</th>
                                     <th style="padding: 4px;">Name</th>
                                     <th style="padding: 4px;">Reg No</th>
                                     <th style="padding: 4px;">Action</th>
@@ -227,12 +260,13 @@
         </div>
     </div>
 
-    <!-- STUDENT PORTAL VIEW -->
+    <!-- ==================== STUDENT PORTAL & COMPILER WORKSPACE ==================== -->
     <div id="studentPortalView" class="hidden">
+        
         <!-- AUTH MODAL -->
         <div id="studentAuthModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 15px;">
-            <div class="comic-box" style="width: 400px; max-width: 100%; text-align: center;">
-                <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 4px;"><i class="fa-solid fa-user-lock"></i> STUDENT LOGIN</h2>
+            <div class="comic-box" style="width: 420px; max-width: 100%; text-align: center;">
+                <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 4px;"><i class="fa-solid fa-terminal"></i> STUDENT WORKBENCH LOGIN</h2>
                 <p style="font-size: 11px; color: #64748b; margin-bottom: 15px;">Register No. must start with <strong>26SU</strong> or <strong>26SP</strong></p>
                 
                 <form onsubmit="loginStudent(event)" class="flex flex-col gap-2" style="text-align: left;">
@@ -256,23 +290,27 @@
                     <div id="loginErrorMsg" style="color: #dc2626; font-size: 11px; font-weight: bold; display: none; margin-top: 5px;"></div>
 
                     <button type="submit" class="comic-btn" style="background: #34d399; margin-top: 10px;">
-                        <i class="fa-solid fa-arrow-right-to-bracket"></i> ENTER PRACTICE WORKBENCH
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i> OPEN COMPILER WORKSPACE
                     </button>
                 </form>
             </div>
         </div>
 
-        <!-- MAIN WORKSPACE -->
-        <div id="studentMainContent" class="hidden comic-box" style="max-width: 1200px; margin: 0 auto; background: #fff;">
+        <!-- MAIN STUDENT COMPILER INTERFACE -->
+        <div id="studentMainContent" class="hidden comic-box" style="max-width: 1250px; margin: 0 auto; background: #fff;">
+            
             <header class="flex justify-between items-center" style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                 <div>
-                    <h1 style="font-size: 20px; font-weight: bold;"><i class="fa-solid fa-code"></i> INTEGRATED LAB WORKBENCH</h1>
+                    <h1 style="font-size: 20px; font-weight: bold;"><i class="fa-solid fa-code"></i> INTEGRATED COMPILER & LAB WORKBENCH</h1>
                     <span id="activeCourseHeading" style="font-size: 12px; color: #4b5563; font-weight: bold;"></span>
                 </div>
-                <div class="flex gap-2 items-center">
+                <div class="flex gap-2 items-center flex-wrap">
                     <span id="displayStudentName" style="font-weight: bold; font-size: 13px; background: #fef08a; padding: 4px 10px; border-radius: 6px; border: 1px solid #000;"></span>
-                    <button onclick="generateLabRecordDocument()" class="comic-btn" style="background: #38bdf8; font-size: 12px;">
-                        <i class="fa-solid fa-file-pdf"></i> Generate Printable Record
+                    <button onclick="downloadDirectPDF()" class="comic-btn" style="background: #22c55e; color: white; font-size: 12px;">
+                        <i class="fa-solid fa-file-arrow-down"></i> Download PDF Record
+                    </button>
+                    <button onclick="triggerPrintDialog()" class="comic-btn" style="background: #38bdf8; font-size: 12px;">
+                        <i class="fa-solid fa-print"></i> Print / Save as PDF
                     </button>
                 </div>
             </header>
@@ -281,57 +319,61 @@
                 <!-- EXERCISES LIST -->
                 <div class="comic-box">
                     <div class="flex justify-between items-center" style="margin-bottom: 10px;">
-                        <h3 style="font-size: 14px; font-weight: bold;">ASSIGNED EXERCISES</h3>
+                        <h3 style="font-size: 14px; font-weight: bold;">COURSE PROGRAM LIST</h3>
                         <span id="studentExerciseCount" style="background: #e9d5ff; padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">0 Exercises</span>
                     </div>
-                    <div id="studentQuestionList" class="flex flex-col gap-2" style="max-height: 480px; overflow-y: auto;"></div>
+                    <div id="studentQuestionList" class="flex flex-col gap-2" style="max-height: 520px; overflow-y: auto;"></div>
                 </div>
 
-                <!-- COMPILER / CODE EDITOR -->
+                <!-- COMPILER / CODE EDITOR (C, C++, Java, Python, SQL) -->
                 <div class="comic-box flex flex-col gap-2" style="background: #0f172a; color: #fff;">
                     <div class="flex justify-between items-center flex-wrap gap-2">
                         <div>
                             <span id="activeTitle" style="font-weight: bold; color: #fef08a; font-size: 14px;">1. Program</span>
                             <span id="activeLangBadge" style="background: #334155; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; text-transform: uppercase;">C</span>
                         </div>
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 items-center">
+                            <label style="font-size: 11px; color: #cbd5e1;">Language:</label>
                             <select id="editorLangSelect" onchange="changeActiveLanguage()" style="background:#1e293b; color:#fff; border-color:#475569; width:auto; font-size:12px; padding:4px 8px;">
-                                <option value="c">C (GCC)</option>
-                                <option value="cpp">C++ (G++)</option>
-                                <option value="python">Python 3</option>
+                                <option value="c">C (GCC 10.2)</option>
+                                <option value="cpp">C++ (G++ 10.2)</option>
                                 <option value="java">Java 15</option>
+                                <option value="python">Python 3.10</option>
+                                <option value="sql">SQL (SQLite 3.36)</option>
                             </select>
                             <button id="runBtn" onclick="runCode()" class="comic-btn" style="background: #22c55e; color: #000; font-size: 12px; padding: 6px 12px;">
-                                <i class="fa-solid fa-play"></i> RUN PROGRAM
+                                <i class="fa-solid fa-play"></i> EXECUTE PROGRAM
                             </button>
                         </div>
                     </div>
 
                     <div style="position: relative;">
-                        <textarea id="codeEditor" class="font-code" style="height: 220px; background: #020617; color: #38bdf8; resize: vertical; line-height: 1.4; tab-size: 4;" placeholder="// Write your solution here... Press TAB to indent"></textarea>
+                        <textarea id="codeEditor" class="font-code" style="height: 240px; background: #020617; color: #38bdf8; resize: vertical; line-height: 1.4; tab-size: 4;" placeholder="// Write your code or SQL queries here...&#10;// Press TAB to indent"></textarea>
                     </div>
 
-                    <!-- STDIN INPUT BOX -->
+                    <!-- STDIN INPUT / SQL NOTES -->
                     <div>
-                        <label style="font-size: 11px; font-weight: bold; color: #94a3b8;"><i class="fa-solid fa-keyboard"></i> STANDARD INPUT (stdin):</label>
-                        <input type="text" id="consoleStdin" class="font-code" style="background: #1e293b; color: #f8fafc; border-color: #334155; margin-top: 3px;" placeholder="Values to feed into scanf / input() (e.g. 5 10)">
+                        <label id="stdinLabel" style="font-size: 11px; font-weight: bold; color: #94a3b8;">
+                            <i class="fa-solid fa-keyboard"></i> STANDARD INPUT (stdin for scanf / cin / input):
+                        </label>
+                        <input type="text" id="consoleStdin" class="font-code" style="background: #1e293b; color: #f8fafc; border-color: #334155; margin-top: 3px;" placeholder="Optional standard inputs (e.g. 5 10)">
                     </div>
                     
                     <!-- TERMINAL OUTPUT -->
                     <div style="background: #020617; padding: 10px; border-radius: 8px; border: 1px solid #1e293b;">
                         <div class="flex justify-between items-center font-code" style="font-size: 11px; border-bottom: 1px solid #1e293b; padding-bottom: 4px;">
-                            <span>EXPECTED OUTPUT: <strong id="specOutput" style="color: #38bdf8;"></strong></span>
+                            <span>STATUS / TARGET: <strong id="specOutput" style="color: #38bdf8;"></strong></span>
                             <span id="validationTag" style="font-weight: bold; color: #94a3b8;">NOT EVALUATED</span>
                         </div>
-                        <pre id="consoleOut" class="font-code" style="font-size: 12px; margin-top: 8px; color: #cbd5e1; white-space: pre-wrap; min-height: 50px; max-height: 140px; overflow-y: auto;">Type your program code, provide standard input if needed, and click RUN PROGRAM.</pre>
+                        <pre id="consoleOut" class="font-code" style="font-size: 12px; margin-top: 8px; color: #cbd5e1; white-space: pre-wrap; min-height: 55px; max-height: 140px; overflow-y: auto;">Type code, click EXECUTE PROGRAM, and verify output.</pre>
                     </div>
 
                     <div class="flex justify-between items-center" style="margin-top: 4px;">
                         <button onclick="resetEditorCode()" class="comic-btn" style="background: #475569; color: #fff; font-size: 11px; padding: 6px 10px;">
-                            <i class="fa-solid fa-arrow-rotate-left"></i> Reset
+                            <i class="fa-solid fa-arrow-rotate-left"></i> Reset Code
                         </button>
                         <button id="saveRecordBtn" onclick="saveRecord()" class="comic-btn" style="background: #34d399; color: #000;">
-                            <i class="fa-solid fa-check-double"></i> Save Exercise to Record
+                            <i class="fa-solid fa-check-double"></i> Save Completed Program to Record
                         </button>
                     </div>
                 </div>
@@ -339,21 +381,22 @@
         </div>
     </div>
 
-    <!-- HIDDEN CONTAINER FOR ASYNC MERMAID / PRINTABLE RECORD -->
+    <!-- ==================== PRINT / PDF GENERATION CONTAINER ==================== -->
     <div id="printableLabRecord" class="hidden"></div>
 
     <script>
         // INSTITUTION SVG LOGO
         const COLLEGE_LOGO_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 120' width='600' height='120'><rect width='100%' height='100%' fill='none'/><g transform='translate(10,10)'><circle cx='50' cy='50' r='45' fill='%23f97316'/><circle cx='50' cy='50' r='30' fill='%23059669'/><text x='50' y='56' font-size='12' font-family='Arial, sans-serif' font-weight='bold' fill='white' text-anchor='middle'>HITS</text></g><text x='130' y='52' font-size='32' font-family='Arial, sans-serif' font-weight='900' fill='%23000000'>HINDUSTAN</text><text x='130' y='75' font-size='14' font-family='Arial, sans-serif' font-weight='bold' fill='%231f2937'>INSTITUTE OF TECHNOLOGY %26 SCIENCE</text><text x='130' y='95' font-size='12' font-family='Arial, sans-serif' font-weight='bold' fill='%234b5563'>(DEEMED TO BE UNIVERSITY)</text></svg>";
 
-        // STATE OBJECTS
+        // COURSE & APP STATE
         let courseConfig = {
             code: "BCA41001",
-            name: "PROBLEM SOLVING PROGRAMMING",
+            name: "PROBLEM SOLVING & PROGRAMMING LAB",
             dept: "DEPARTMENT OF COMPUTER APPLICATIONS",
             degree: "BACHELOR OF COMPUTER APPLICATIONS",
             semester: "SEMESTER – II",
             academicYear: "2024 – 2025",
+            defaultLang: "c",
             webhookUrl: ""
         };
 
@@ -361,10 +404,17 @@
             c: [
                 { 
                     title: "Reads an integer and display it", 
-                    code: "#include <stdio.h>\nint main() {\n    int num;\n    scanf(\"%d\", &num);\n    printf(\"%d\", num);\n    return 0;\n}", 
+                    code: "#include <stdio.h>\nint main() {\n    int num;\n    scanf(\"%d\", &num);\n    printf(\"Integer: %d\", num);\n    return 0;\n}", 
                     lang: "c", 
-                    sampleInput: "10", 
-                    expectedOutput: "10" 
+                    sampleInput: "25", 
+                    expectedOutput: "25" 
+                },
+                { 
+                    title: "Create Table and Insert Records", 
+                    code: "CREATE TABLE Student (RollNo INT, Name TEXT, Marks INT);\nINSERT INTO Student VALUES (101, 'Aravind', 95);\nINSERT INTO Student VALUES (102, 'Bhavana', 88);\nSELECT * FROM Student;", 
+                    lang: "sql", 
+                    sampleInput: "", 
+                    expectedOutput: "Aravind" 
                 }
             ]
         };
@@ -375,10 +425,10 @@
         let currentExecutionPassed = false;
         let validatedActualOutput = "";
 
-        // INITIALIZE MERMAID
+        // INITIALIZE MERMAID FOR FLOWCHARTS & DIAGRAMS
         mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
 
-        // TAB INDENTATION KEYDOWN HANDLER
+        // TAB KEY INTERCEPTION IN CODE EDITOR
         document.getElementById('codeEditor').addEventListener('keydown', function(e) {
             if (e.key === 'Tab') {
                 e.preventDefault();
@@ -389,26 +439,22 @@
             }
         });
 
-        // PAGE INITIALIZER & LZ-STRING DECOMPRESSION
+        // PAGE INITIALIZER (LZ-STRING DECODER)
         window.onload = function() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const dataParam = urlParams.get('data');
                 if (dataParam) {
                     let decodedStr = "";
-                    // Try LZ-String decompression first
                     if (window.LZString) {
                         decodedStr = LZString.decompressFromEncodedURIComponent(dataParam);
                     }
-                    // Fallback to legacy base64 if not LZ compressed
                     if (!decodedStr) {
                         try { decodedStr = decodeURIComponent(escape(atob(dataParam))); } catch(e){}
                     }
-                    
                     if (decodedStr) {
                         const parsed = JSON.parse(decodedStr);
                         if (parsed.c) questionBank.c = parsed.c;
-                        else if (parsed.questionBank) questionBank = parsed.questionBank;
                         if (parsed.cc) courseConfig = Object.assign(courseConfig, parsed.cc);
                         
                         document.getElementById('adminPortalView').classList.add('hidden');
@@ -416,8 +462,8 @@
                         return;
                     }
                 }
-            } catch (e) {
-                console.warn("Direct access / default admin loading:", e);
+            } catch(e) {
+                console.warn("Direct loading admin view:", e);
             }
             
             document.getElementById('adminPortalView').classList.remove('hidden');
@@ -428,65 +474,129 @@
 
         function updateCourseConfig() {
             courseConfig.code = document.getElementById('adminCourseCode').value.trim() || "BCA41001";
-            courseConfig.name = document.getElementById('adminCourseName').value.trim() || "PROBLEM SOLVING PROGRAMMING";
+            courseConfig.name = document.getElementById('adminCourseName').value.trim() || "LABORATORY WORKBENCH";
             courseConfig.dept = document.getElementById('adminDeptName').value.trim() || "DEPARTMENT OF COMPUTER APPLICATIONS";
             courseConfig.degree = document.getElementById('adminDegreeName').value.trim() || "BACHELOR OF COMPUTER APPLICATIONS";
             courseConfig.semester = document.getElementById('adminSemester').value.trim() || "SEMESTER – II";
             courseConfig.academicYear = document.getElementById('adminAcaYear').value.trim() || "2024 – 2025";
+            courseConfig.defaultLang = document.getElementById('adminDefaultLang').value;
             courseConfig.webhookUrl = document.getElementById('adminWebhookUrl').value.trim();
         }
 
-        function triggerCodeFileUpload() { 
-            document.getElementById('codeFileInput').click(); 
+        // ==================== DOCUMENT & LINE-BY-LINE PARSER ====================
+        function triggerDocUpload() {
+            document.getElementById('docFileInput').click();
         }
 
-        function handleCodeFileUpload(e) {
-            const files = Array.from(e.target.files);
-            if (files.length === 0) return;
+        function handleDocumentUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
 
-            files.forEach(file => {
+            const ext = file.name.split('.').pop().toLowerCase();
+
+            if (ext === 'docx') {
                 const reader = new FileReader();
                 reader.onload = function(evt) {
-                    const content = evt.target.result;
-                    
-                    if (file.name.endsWith('.json')) {
-                        try {
-                            const parsed = JSON.parse(content);
-                            if (Array.isArray(parsed)) {
-                                parsed.forEach(p => questionBank.c.push(p));
-                            } else if (parsed.questionBank && parsed.questionBank.c) {
-                                questionBank.c = parsed.questionBank.c;
-                            }
-                        } catch(err) {
-                            alert("Invalid JSON format in file: " + file.name);
-                        }
-                    } else {
-                        const ext = file.name.split('.').pop().toLowerCase();
-                        const langMap = { 'py': 'python', 'java': 'java', 'cpp': 'cpp', 'c': 'c' };
-                        
-                        questionBank.c.push({
-                            title: file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
-                            code: content,
-                            lang: langMap[ext] || "c",
-                            sampleInput: "",
-                            expectedOutput: extractOutputPattern(content)
-                        });
+                    mammoth.extractRawText({ arrayBuffer: evt.target.result })
+                        .then(result => {
+                            parseRawDocumentText(result.value);
+                        })
+                        .catch(err => alert("Error parsing docx file: " + err.message));
+                };
+                reader.readAsArrayBuffer(file);
+            } else if (ext === 'json') {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    try {
+                        const parsed = JSON.parse(evt.target.result);
+                        if (Array.isArray(parsed)) parsed.forEach(p => questionBank.c.push(p));
+                        else if (parsed.questionBank && parsed.questionBank.c) questionBank.c = parsed.questionBank.c;
+                        renderAdminQuestions();
+                    } catch(err) {
+                        alert("Invalid JSON: " + err.message);
                     }
-                    
-                    renderAdminQuestions();
                 };
                 reader.readAsText(file);
-            });
+            } else {
+                // txt, c, cpp, java, py, sql
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const text = evt.target.result;
+                    if (ext === 'txt') {
+                        parseRawDocumentText(text);
+                    } else {
+                        // Single code program file
+                        const langMap = { 'c':'c', 'cpp':'cpp', 'java':'java', 'py':'python', 'sql':'sql' };
+                        questionBank.c.push({
+                            title: file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
+                            code: text,
+                            lang: langMap[ext] || courseConfig.defaultLang,
+                            sampleInput: "",
+                            expectedOutput: "Completed"
+                        });
+                        renderAdminQuestions();
+                    }
+                };
+                reader.readAsText(file);
+            }
         }
 
-        function addManualExercise() {
-            const title = document.getElementById('manualTitle').value.trim();
-            const lang = document.getElementById('manualLang').value;
-            const sampleInput = document.getElementById('manualSampleInput').value.trim();
-            const expectedOutput = document.getElementById('manualTargetOutput').value.trim();
+        function parseTextLineByLine() {
+            const text = document.getElementById('documentTextArea').value;
+            if (!text.trim()) {
+                alert("Please paste text or upload a document first!");
+                return;
+            }
+            parseRawDocumentText(text);
+            document.getElementById('documentTextArea').value = "";
+        }
 
-            if (!title || !expectedOutput) {
-                alert("Please fill in both the Exercise Title and Target Output!");
+        function parseRawDocumentText(text) {
+            const lines = text.split(/\r?\n/);
+            let parsedCount = 0;
+            const defLang = document.getElementById('adminDefaultLang').value || "c";
+
+            lines.forEach(rawLine => {
+                let line = rawLine.trim();
+                if (!line) return;
+
+                // Strip leading numbers: "1.", "1)", "Ex 1:", "Exp 1 - "
+                line = line.replace(/^(?:ex(?:p)?\s*\d+|experiment\s*\d+|\d+)[\.\)\:\-]\s*/i, "").trim();
+
+                // Ignore trivial headers / page lines
+                if (line.length < 5 || /^(page\s*\d+|syllabus|contents|index)$/i.test(line)) return;
+
+                questionBank.c.push({
+                    title: line,
+                    code: getStarterTemplateForLang(defLang, line),
+                    lang: defLang,
+                    sampleInput: "",
+                    expectedOutput: "" // will pass on any successful runtime execution if empty
+                });
+                parsedCount++;
+            });
+
+            renderAdminQuestions();
+            alert(`Document processed successfully! Parsed ${parsedCount} programs line-by-line.`);
+        }
+
+        function getStarterTemplateForLang(lang, title) {
+            if (lang === 'c') return `// Program: ${title}\n#include <stdio.h>\n\nint main() {\n    printf("Program Executed Successfully\\n");\n    return 0;\n}`;
+            if (lang === 'cpp') return `// Program: ${title}\n#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Program Executed Successfully" << endl;\n    return 0;\n}`;
+            if (lang === 'java') return `// Program: ${title}\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println("Program Executed Successfully");\n    }\n}`;
+            if (lang === 'python') return `# Program: ${title}\nprint("Program Executed Successfully")`;
+            if (lang === 'sql') return `-- Query: ${title}\nCREATE TABLE Demo (Id INT, Name TEXT);\nINSERT INTO Demo VALUES (1, 'Sample Record');\nSELECT * FROM Demo;`;
+            return "";
+        }
+
+        function addSingleProgram() {
+            const title = document.getElementById('manualSingleTitle').value.trim();
+            const lang = document.getElementById('manualSingleLang').value;
+            const sampleInput = document.getElementById('manualSingleInput').value.trim();
+            const expectedOutput = document.getElementById('manualSingleOutput').value.trim();
+
+            if (!title) {
+                alert("Please enter program title!");
                 return;
             }
 
@@ -495,23 +605,13 @@
                 lang,
                 sampleInput,
                 expectedOutput,
-                code: ""
+                code: getStarterTemplateForLang(lang, title)
             });
 
-            document.getElementById('manualTitle').value = "";
-            document.getElementById('manualSampleInput').value = "";
-            document.getElementById('manualTargetOutput').value = "";
-
+            document.getElementById('manualSingleTitle').value = "";
+            document.getElementById('manualSingleInput').value = "";
+            document.getElementById('manualSingleOutput').value = "";
             renderAdminQuestions();
-        }
-
-        function extractOutputPattern(code) {
-            let match = code.match(/printf\s*\(\s*"([^"]+)"/i) || 
-                        code.match(/System\.out\.println\s*\(\s*"([^"]+)"/i) || 
-                        code.match(/print\s*\(\s*"([^"]+)"/i) ||
-                        code.match(/cout\s*<<\s*"([^"]+)"/i);
-            if (match) return match[1].replace(/%d|%f|%s|\\n/g, "").trim();
-            return "Completed";
         }
 
         function renderAdminQuestions() {
@@ -519,10 +619,11 @@
             container.innerHTML = "";
             questionBank.c.forEach((q, i) => {
                 container.innerHTML += `
-                    <div style="padding: 6px; border-bottom: 1px solid #ccc; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="padding: 6px; border-bottom: 1px solid #e2e8f0; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <strong>${i+1}. ${q.title}</strong> [${(q.lang || 'c').toUpperCase()}]<br>
-                            <span style="color:#64748b;">Target: "${q.expectedOutput}" | In: "${q.sampleInput || 'None'}"</span>
+                            <strong>${i+1}. ${q.title}</strong> 
+                            <span style="font-size:10px; background:#e2e8f0; padding:1px 5px; border-radius:4px; text-transform:uppercase; font-weight:bold;">${q.lang}</span>
+                            <br><span style="color:#64748b; font-size:11px;">Target: "${q.expectedOutput || 'Any valid execution'}"</span>
                         </div>
                         <button onclick="removeQuestion(${i})" class="comic-btn" style="background:#fee2e2; padding:2px 6px; font-size:10px;"><i class="fa-solid fa-xmark"></i></button>
                     </div>`;
@@ -530,19 +631,27 @@
             document.getElementById('loadedStatsBadge').textContent = `${questionBank.c.length} Programs`;
         }
 
-        function removeQuestion(index) {
-            questionBank.c.splice(index, 1);
+        function removeQuestion(idx) {
+            questionBank.c.splice(idx, 1);
             renderAdminQuestions();
         }
 
-        // GENERATE HIGHLY COMPRESSED LINK
+        function clearAllPrograms() {
+            if (confirm("Are you sure you want to clear all loaded programs?")) {
+                questionBank.c = [];
+                renderAdminQuestions();
+            }
+        }
+
+        // COMPRESSED STUDENT LINK GENERATION (LZ-STRING)
         function generateAndCopyStudentLink() {
             updateCourseConfig();
             
             const compactQuestions = questionBank.c.map(q => ({
                 title: q.title,
                 lang: q.lang || "c",
-                expectedOutput: q.expectedOutput,
+                code: q.code || "",
+                expectedOutput: q.expectedOutput || "",
                 sampleInput: q.sampleInput || ""
             }));
 
@@ -553,16 +662,16 @@
             
             const jsonString = JSON.stringify(payload);
             const compressed = LZString.compressToEncodedURIComponent(jsonString);
-            
             const url = `${window.location.origin}${window.location.pathname}?data=${compressed}`;
+
             document.getElementById('generatedStudentUrlInput').value = url;
             document.getElementById('generatedLinkBanner').classList.remove('hidden');
             
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(url).then(() => {
-                    alert("Compressed Student Link copied to clipboard!");
+                    alert("Practice link generated and copied to clipboard!");
                 }).catch(() => {
-                    alert("Practice link generated in the banner!");
+                    alert("Practice link ready in banner!");
                 });
             }
         }
@@ -574,6 +683,7 @@
             alert("Copied to clipboard!");
         }
 
+        // AUDIT LOGS
         function renderStudentLogsTable() {
             const logs = JSON.parse(localStorage.getItem('codehero_access_logs') || '[]');
             const tbody = document.getElementById('studentLogsTableBody');
@@ -599,12 +709,10 @@
         }
 
         async function dispatchCloudAuditLog(actionPayload) {
-            // Local storage audit
             let logs = JSON.parse(localStorage.getItem('codehero_access_logs') || '[]');
             logs.unshift(actionPayload);
-            localStorage.setItem('codehero_access_logs', JSON.stringify(logs.slice(0, 500))); // keep top 500
+            localStorage.setItem('codehero_access_logs', JSON.stringify(logs.slice(0, 500)));
 
-            // Cloud Webhook audit (e.g. Google Sheets Apps Script)
             if (courseConfig.webhookUrl) {
                 try {
                     await fetch(courseConfig.webhookUrl, {
@@ -613,12 +721,11 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(actionPayload)
                     });
-                } catch(err) {
-                    console.warn("Cloud audit sync skipped:", err);
-                }
+                } catch(e) {}
             }
         }
 
+        // ==================== STUDENT PORTAL & COMPILER ====================
         function loginStudent(e) {
             e.preventDefault();
             const name = document.getElementById('sName').value.trim();
@@ -627,14 +734,13 @@
             const errDiv = document.getElementById('loginErrorMsg');
 
             errDiv.style.display = 'none';
-            errDiv.textContent = '';
 
             const isValidRegNo = regNo.startsWith('26SU') || regNo.startsWith('26SP');
             const isValidEmail = email && (email.endsWith('@student.hindustanuniv.ac.in') || email.endsWith('@hindustanuniv.ac.in'));
 
             if (!isValidRegNo && !isValidEmail) {
                 errDiv.style.display = 'block';
-                errDiv.textContent = 'Invalid credentials! Register No. must start with "26SU" or "26SP", or use your official university student email.';
+                errDiv.textContent = 'Invalid credentials! Register No. must start with "26SU" or "26SP", or use official university email.';
                 return;
             }
 
@@ -645,11 +751,11 @@
                 rollNo: document.getElementById('sRollNo').value.trim() 
             };
             
-            // PERSISTENCE: Restore saved records from localStorage
-            const localKey = `saved_records_${courseConfig.code}_${student.regNo}`;
+            // Restore saved records
+            const localKey = `records_${courseConfig.code}_${student.regNo}`;
             const cached = localStorage.getItem(localKey);
             if (cached) {
-                try { savedRecords = JSON.parse(cached); } catch(e){ savedRecords = []; }
+                try { savedRecords = JSON.parse(cached); } catch(err){ savedRecords = []; }
             } else {
                 savedRecords = [];
             }
@@ -680,7 +786,7 @@
             if (countBadge) countBadge.textContent = `${programs.length} Exercises`;
 
             if (programs.length === 0) {
-                container.innerHTML = `<p style="font-size: 12px; color: #64748b;">No exercises assigned.</p>`;
+                container.innerHTML = `<p style="font-size: 12px; color: #64748b;">No exercises found for this course.</p>`;
                 return;
             }
 
@@ -688,11 +794,11 @@
                 const saved = savedRecords.find(r => r.title === q.title);
                 container.innerHTML += `
                     <button onclick="switchStudentQuestion(${i})" class="comic-btn" style="text-align: left; font-size: 12px; width: 100%; justify-content: space-between; background:${i === activeStudentIndex ? '#fef08a' : '#fff'};">
-                        <div>
+                        <div style="max-width: 80%;">
                             <strong>${i+1}. ${q.title}</strong>
-                            ${saved ? `<br><span style="color:#059669; font-size:10px;"><i class="fa-solid fa-circle-check"></i> Completed on ${saved.date}</span>` : ''}
+                            ${saved ? `<br><span style="color:#059669; font-size:10px;"><i class="fa-solid fa-circle-check"></i> Saved on ${saved.date}</span>` : ''}
                         </div>
-                        <span style="font-size: 10px; background: #e2e8f0; padding: 2px 5px; border-radius: 4px; text-transform: uppercase;">${q.lang || 'c'}</span>
+                        <span style="font-size: 10px; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">${q.lang || 'c'}</span>
                     </button>
                 `;
             });
@@ -711,21 +817,27 @@
             document.getElementById('activeTitle').textContent = `${activeStudentIndex + 1}. ${q.title}`;
             document.getElementById('activeLangBadge').textContent = (q.lang || 'c').toUpperCase();
             document.getElementById('editorLangSelect').value = q.lang || 'c';
-            document.getElementById('specOutput').textContent = q.expectedOutput;
+            document.getElementById('specOutput').textContent = q.expectedOutput ? `Target: "${q.expectedOutput}"` : "Any Valid Execution";
             document.getElementById('consoleStdin').value = q.sampleInput || "";
             
-            // Check if saved already
+            if (q.lang === 'sql') {
+                document.getElementById('stdinLabel').innerHTML = `<i class="fa-solid fa-database"></i> SQL MODE: Standard input is not required for SQLite queries.`;
+            } else {
+                document.getElementById('stdinLabel').innerHTML = `<i class="fa-solid fa-keyboard"></i> STANDARD INPUT (stdin for scanf / cin / input):`;
+            }
+
+            // Restore from saved or load starter template
             const saved = savedRecords.find(r => r.title === q.title);
             if (saved) {
                 document.getElementById('codeEditor').value = saved.code;
-                document.getElementById('consoleOut').textContent = `[SAVED SOLUTION LOADED]\n${saved.output}`;
-                document.getElementById('validationTag').textContent = "PASSED (SAVED)";
+                document.getElementById('consoleOut').textContent = `[SAVED COMPILER OUTPUT]:\n${saved.output}`;
+                document.getElementById('validationTag').textContent = "SAVED RECORD";
                 document.getElementById('validationTag').style.color = "#34d399";
                 currentExecutionPassed = true;
                 validatedActualOutput = saved.output;
             } else {
-                document.getElementById('codeEditor').value = q.code || "";
-                document.getElementById('consoleOut').textContent = "Write your solution, provide sample input if required, and click RUN PROGRAM.";
+                document.getElementById('codeEditor').value = q.code || getStarterTemplateForLang(q.lang, q.title);
+                document.getElementById('consoleOut').textContent = "Write your program or query above and click EXECUTE PROGRAM.";
                 document.getElementById('validationTag').textContent = "NOT EVALUATED";
                 document.getElementById('validationTag').style.color = "#94a3b8";
                 currentExecutionPassed = false;
@@ -739,13 +851,18 @@
             if (q) {
                 q.lang = selLang;
                 document.getElementById('activeLangBadge').textContent = selLang.toUpperCase();
+                if (selLang === 'sql') {
+                    document.getElementById('stdinLabel').innerHTML = `<i class="fa-solid fa-database"></i> SQL MODE: Standard input not required.`;
+                } else {
+                    document.getElementById('stdinLabel').innerHTML = `<i class="fa-solid fa-keyboard"></i> STANDARD INPUT (stdin for scanf / cin / input):`;
+                }
             }
         }
 
         function resetEditorCode() {
             const q = questionBank.c[activeStudentIndex];
-            if (q && confirm("Reset editor to default?")) {
-                document.getElementById('codeEditor').value = q.code || "";
+            if (q && confirm("Reset editor to default code?")) {
+                document.getElementById('codeEditor').value = getStarterTemplateForLang(q.lang, q.title);
                 document.getElementById('consoleOut').textContent = "Editor reset.";
                 document.getElementById('validationTag').textContent = "NOT EVALUATED";
                 document.getElementById('validationTag').style.color = "#94a3b8";
@@ -753,7 +870,7 @@
             }
         }
 
-        // REAL COMPILER EXECUTION VIA PISTON API WITH MULTI-LANGUAGE + STDIN
+        // ==================== COMPILER EXECUTION (C, C++, JAVA, PYTHON, SQL) ====================
         async function runCode() {
             const code = document.getElementById('codeEditor').value.trim();
             const q = questionBank.c[activeStudentIndex];
@@ -770,15 +887,18 @@
             }
 
             runBtn.disabled = true;
-            runBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> RUNNING...`;
-            consoleOut.textContent = "Compiling and executing code on sandboxed runner...";
+            runBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> COMPILING & RUNNING...`;
+            consoleOut.textContent = "Executing code on sandbox runtime...";
 
             const lang = document.getElementById('editorLangSelect').value || q.lang || 'c';
+            
+            // Map to Piston API Languages (Supports sqlite3 for SQL!)
             const langMap = {
                 'c': { language: 'c', version: '10.2.0' },
                 'cpp': { language: 'cpp', version: '10.2.0' },
                 'python': { language: 'python', version: '3.10.0' },
-                'java': { language: 'java', version: '15.0.2' }
+                'java': { language: 'java', version: '15.0.2' },
+                'sql': { language: 'sqlite3', version: '3.36.0' }
             };
 
             const target = langMap[lang] || langMap['c'];
@@ -801,70 +921,117 @@
                     const data = await res.json();
                     if (data.run) {
                         actualOutput = (data.run.stdout || "").trim();
-                        if (data.run.stderr) {
-                            executionError = data.run.stderr.trim();
-                        }
+                        if (data.run.stderr) executionError = data.run.stderr.trim();
                     }
                 } else {
-                    executionError = "Execution server returned status " + res.status;
+                    executionError = "Execution server status: " + res.status;
                 }
             } catch(e) {
-                executionError = "Network error connecting to compiler runner: " + e.message;
+                executionError = "Execution server connection failed: " + e.message;
             }
 
             runBtn.disabled = false;
-            runBtn.innerHTML = `<i class="fa-solid fa-play"></i> RUN PROGRAM`;
+            runBtn.innerHTML = `<i class="fa-solid fa-play"></i> EXECUTE PROGRAM`;
 
             if (executionError && !actualOutput) {
                 consoleOut.textContent = `[RUNTIME / COMPILE ERROR]:\n${executionError}`;
-                valTag.textContent = "ERROR";
+                valTag.textContent = "FAILED";
                 valTag.style.color = "#f87171";
                 currentExecutionPassed = false;
                 return;
             }
 
-            validatedActualOutput = actualOutput;
+            validatedActualOutput = actualOutput || "[Query / Program executed successfully with no return value]";
             const targetOutput = (q.expectedOutput || "").trim().toLowerCase();
             const cleanActual = actualOutput.trim().toLowerCase();
 
-            // Strict check: Actual output must contain or match the expected output
-            if (cleanActual && (cleanActual === targetOutput || cleanActual.includes(targetOutput))) {
-                consoleOut.textContent = `[TERMINAL OUTPUT]:\n${actualOutput}\n\n✅ TEST CASE PASSED!\nExecution matched expected output. Click "Save Exercise to Record".`;
+            // Strict Validation or Successful Execution check
+            if (!targetOutput || cleanActual.includes(targetOutput) || targetOutput.includes(cleanActual)) {
+                consoleOut.textContent = `[OUTPUT]:\n${validatedActualOutput}\n\n✅ EXECUTION SUCCESSFUL!\nYou can now save this completed program to your record.`;
                 valTag.textContent = "PASSED";
                 valTag.style.color = "#34d399";
                 currentExecutionPassed = true;
             } else {
-                consoleOut.textContent = `[TERMINAL OUTPUT]:\n${actualOutput || "[No Output Generated]"}\n\n${executionError ? `[ERRORS]:\n${executionError}\n\n` : ''}❌ TEST CASE FAILED!\nTarget Expected: "${q.expectedOutput}"\nYour Output: "${actualOutput}"`;
-                valTag.textContent = "FAILED";
+                consoleOut.textContent = `[OUTPUT]:\n${actualOutput}\n\n❌ TARGET MISMATCH!\nExpected to contain: "${q.expectedOutput}"\nPlease adjust your program logic or queries.`;
+                valTag.textContent = "TARGET MISMATCH";
                 valTag.style.color = "#f87171";
                 currentExecutionPassed = false;
             }
         }
 
-        function generateProcedureFromCode(code) {
+        function saveRecord() {
+            if (!currentExecutionPassed) {
+                alert("Please click EXECUTE PROGRAM and get a PASSED evaluation before saving!");
+                return;
+            }
+            const q = questionBank.c[activeStudentIndex];
+            const currentDate = new Date().toLocaleDateString('en-GB');
+
+            const entry = { 
+                title: q.title, 
+                code: document.getElementById('codeEditor').value, 
+                output: validatedActualOutput || "Executed successfully", 
+                lang: document.getElementById('editorLangSelect').value || q.lang || 'c',
+                date: currentDate 
+            };
+            
+            const idx = savedRecords.findIndex(r => r.title === q.title);
+            if (idx >= 0) savedRecords[idx] = entry;
+            else savedRecords.push(entry);
+
+            // Persist
+            const localKey = `records_${courseConfig.code}_${student.regNo}`;
+            localStorage.setItem(localKey, JSON.stringify(savedRecords));
+
+            dispatchCloudAuditLog({
+                timestamp: new Date().toLocaleString(),
+                name: student.name,
+                regNo: student.regNo,
+                action: `SAVED_PROGRAM: ${q.title}`
+            });
+
+            renderStudentQuestionList();
+            alert(`Program "${q.title}" saved successfully to your laboratory record!`);
+        }
+
+        // ==================== PROCEDURES & MERMAID DIAGRAMS ====================
+        function generateProcedureFromCode(code, lang) {
+            if (lang === 'sql') {
+                return "1. Connect to SQLite relational database engine.\n2. Execute DDL statements to define relation schemas and data attributes.\n3. Execute DML insert transactions to populate tuples into the table.\n4. Execute DQL queries with projections and selections.\n5. Fetch and display tabular result tuples.";
+            }
+
             let steps = ["1. Start program execution."];
             let stepNum = 2;
-
-            if (code.includes("Scanner") || code.includes("scanf") || code.includes("cin") || code.includes("input(")) {
-                steps.push(`${stepNum++}. Initialize stream readers and prompt user for standard inputs.`);
+            if (code.includes("scanf") || code.includes("cin") || code.includes("input(") || code.includes("Scanner")) {
+                steps.push(`${stepNum++}. Initialize input streams and read standard inputs from the user.`);
             }
-            if (code.includes("int ") || code.includes("double ") || code.includes("float ") || code.includes("let ") || code.includes("def ")) {
-                steps.push(`${stepNum++}. Allocate memory and initialize variables with required datatypes.`);
+            if (code.includes("int ") || code.includes("float ") || code.includes("double ") || code.includes("let ") || code.includes("def ")) {
+                steps.push(`${stepNum++}. Declare and initialize operational variables.`);
             }
             if (code.includes("if") || code.includes("switch")) {
                 steps.push(`${stepNum++}. Evaluate conditional branches and relational expressions.`);
             }
             if (code.includes("for") || code.includes("while")) {
-                steps.push(`${stepNum++}. Iterate loop constructs over operational data boundaries.`);
+                steps.push(`${stepNum++}. Iterate loop construct over operational boundaries.`);
             }
-            steps.push(`${stepNum++}. Compute required algorithmic operations and output results to display.`);
+            steps.push(`${stepNum++}. Perform algorithmic logic and compute output.`);
+            steps.push(`${stepNum++}. Display output results on standard output terminal.`);
             steps.push(`${stepNum}. Stop.`);
 
             return steps.join("\n");
         }
 
-        // GENERATE MERMAID FLOWCHART CODE
-        function generateMermaidDefinition(code) {
+        function generateMermaidDefinition(code, lang) {
+            if (lang === 'sql') {
+                return `erDiagram
+    DATABASE-TABLE {
+        int RecordId PK
+        string AttributeData
+        string Timestamp
+    }
+    DATABASE-TABLE ||--o{ QUERY-EXECUTION : processes`;
+            }
+
             let lines = ["graph TD", "Start([START]) --> Init[Initialize Variables]"];
             let prevNode = "Init";
 
@@ -895,52 +1062,8 @@
             return lines.join("\n");
         }
 
-        function saveRecord() {
-            if (!currentExecutionPassed) {
-                alert("Validation Required! Run your program and achieve a PASSED evaluation before saving.");
-                return;
-            }
-            const q = questionBank.c[activeStudentIndex];
-            const currentDate = new Date().toLocaleDateString('en-GB');
-
-            const entry = { 
-                title: q.title, 
-                code: document.getElementById('codeEditor').value, 
-                output: validatedActualOutput || q.expectedOutput, 
-                lang: document.getElementById('editorLangSelect').value || q.lang || 'c',
-                date: currentDate 
-            };
-            
-            const idx = savedRecords.findIndex(r => r.title === q.title);
-            if (idx >= 0) savedRecords[idx] = entry;
-            else savedRecords.push(entry);
-
-            // SAVE TO LOCAL STORAGE
-            const localKey = `saved_records_${courseConfig.code}_${student.regNo}`;
-            localStorage.setItem(localKey, JSON.stringify(savedRecords));
-
-            dispatchCloudAuditLog({
-                timestamp: new Date().toLocaleString(),
-                name: student.name,
-                regNo: student.regNo,
-                action: `SAVED_EXERCISE: ${q.title}`
-            });
-
-            renderStudentQuestionList();
-            alert(`Exercise "${q.title}" Saved to Record!`);
-        }
-
-        // GENERATE PRINTABLE RECORD WITH DYNAMIC MERMAID FLOWCHARTS
-        async function generateLabRecordDocument() {
-            if (savedRecords.length === 0) { 
-                alert("Please save at least one completed exercise before generating the record!"); 
-                return; 
-            }
-
-            const printDiv = document.getElementById('printableLabRecord');
-            printDiv.innerHTML = `<div style="text-align:center; padding: 40px; font-family:sans-serif;"><h2>Generating Lab Record & Rendering Flowcharts...</h2></div>`;
-            printDiv.classList.remove('hidden');
-
+        // ==================== PDF & PRINT RECORD GENERATION ====================
+        async function buildRecordHtml() {
             let html = `
                 <!-- PAGE 1: COVER PAGE -->
                 <div class="page-break" style="padding: 20px; text-align: center; font-family: 'Times New Roman', serif;">
@@ -980,7 +1103,7 @@
                         This is to certify that this is a bonafide record of work done by <strong>${student.name}</strong> 
                         (Register Number: <strong>${student.regNo}</strong>) of <strong>${courseConfig.degree}</strong> class, 
                         submitted for the End Semester Practical Examination held on ____________________ 
-                        in <strong>${courseConfig.code} – ${courseConfig.name} Laboratory</strong> during the academic year <strong>${courseConfig.academicYear}</strong>.
+                        in <strong>${courseConfig.code} – ${courseConfig.name}</strong> during the academic year <strong>${courseConfig.academicYear}</strong>.
                     </p>
                     
                     <div style="margin-top: 140px; display: flex; justify-content: space-between; text-align: center; font-weight: bold; font-size: 11pt;">
@@ -993,7 +1116,7 @@
                 <!-- PAGE 3: INDEX PAGE -->
                 <div class="page-break" style="padding: 20px; font-family: 'Times New Roman', serif;">
                     <h2 style="text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px;">
-                        ${courseConfig.name} – INTEGRATED LAB RECORD | INDEX
+                        ${courseConfig.name} – RECORD INDEX
                     </h2>
                     <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10pt;" border="1">
                         <thead>
@@ -1013,7 +1136,7 @@
                     <tr>
                         <td style="padding: 8px; text-align: center;">${i + 1}</td>
                         <td style="padding: 8px; text-align: center;">${rec.date}</td>
-                        <td style="padding: 8px;">${rec.title}</td>
+                        <td style="padding: 8px;">${rec.title} [${rec.lang.toUpperCase()}]</td>
                         <td style="padding: 8px; text-align: center;">${i + 5}</td>
                         <td style="padding: 8px;"></td>
                     </tr>
@@ -1065,22 +1188,22 @@
 
             // PAGES 5+: EXERCISES
             savedRecords.forEach((rec, i) => {
-                const autoProcedure = generateProcedureFromCode(rec.code);
+                const autoProcedure = generateProcedureFromCode(rec.code, rec.lang);
 
                 html += `
                     <div class="page-break" style="padding: 20px; font-family: 'Times New Roman', serif; position: relative;">
                         <h3 style="font-size: 13pt; font-weight: bold;">${i+1}. ${rec.title}</h3>
                         
                         <p style="font-weight: bold; margin-top: 12px;">Aim:</p>
-                        <p style="margin-bottom: 10px;">To design, develop and execute a program in ${(rec.lang || 'c').toUpperCase()} to implement ${rec.title.toLowerCase()} and verify target output.</p>
+                        <p style="margin-bottom: 10px;">To design, develop and execute a program in ${rec.lang.toUpperCase()} to implement ${rec.title.toLowerCase()} and verify target output.</p>
                         
                         <p style="font-weight: bold; margin-top: 12px;">Procedure / Algorithm:</p>
                         <pre style="font-family: 'Times New Roman', serif; white-space: pre-wrap; font-size: 10pt; line-height: 1.5; margin-bottom: 10px; background: transparent !important; border: none; padding: 0;">${autoProcedure}</pre>
                         
-                        <p style="font-weight: bold; margin-top: 12px;">Flowchart:</p>
+                        <p style="font-weight: bold; margin-top: 12px;">${rec.lang === 'sql' ? 'Relational Schema Diagram:' : 'Flowchart:'}</p>
                         <div id="flowchart_container_${i}" class="flowchart-svg-container" style="background: transparent !important; padding: 10px; border: 1px solid #000000; text-align: center; margin-bottom: 15px;"></div>
 
-                        <p style="font-weight: bold; margin-top: 12px;">Program Code:</p>
+                        <p style="font-weight: bold; margin-top: 12px;">Program / Query Code:</p>
                         <pre style="background: transparent !important; padding: 10px; font-size: 9.5pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 10px; color: #000000;">${rec.code}</pre>
                         
                         <p style="font-weight: bold; margin-top: 12px;">Output:</p>
@@ -1094,27 +1217,68 @@
                 `;
             });
 
+            return html;
+        }
+
+        async function preparePrintableContainer() {
+            if (savedRecords.length === 0) { 
+                alert("Please save at least one completed program before generating the record!"); 
+                return false; 
+            }
+
+            const printDiv = document.getElementById('printableLabRecord');
+            printDiv.innerHTML = `<div style="text-align:center; padding: 40px; font-family:sans-serif;"><h2>Generating Lab Record & Rendering Schemas...</h2></div>`;
+            printDiv.classList.remove('hidden');
+
+            const html = await buildRecordHtml();
             printDiv.innerHTML = html;
 
-            // RENDER MERMAID FLOWCHARTS ASYNC
+            // Render Mermaid Flowcharts / ER diagrams
             for (let i = 0; i < savedRecords.length; i++) {
                 try {
-                    const mermaidCode = generateMermaidDefinition(savedRecords[i].code);
+                    const mermaidCode = generateMermaidDefinition(savedRecords[i].code, savedRecords[i].lang);
                     const { svg } = await mermaid.render(`rendered_flowchart_${i}`, mermaidCode);
                     const targetEl = document.getElementById(`flowchart_container_${i}`);
                     if (targetEl) targetEl.innerHTML = svg;
                 } catch(e) {
-                    console.warn("Mermaid render fallback for index " + i, e);
                     const targetEl = document.getElementById(`flowchart_container_${i}`);
-                    if (targetEl) targetEl.textContent = "[START] ➔ [INITIALIZE] ➔ [PROCESS OPERATIONS] ➔ [DISPLAY OUTPUT] ➔ [STOP]";
+                    if (targetEl) targetEl.textContent = "[START] ➔ [PROCESS OPERATIONS] ➔ [DISPLAY OUTPUT] ➔ [STOP]";
                 }
             }
 
-            // PRINT TRIGGER
+            return true;
+        }
+
+        // TRIGGER 1: BROWSER PRINT / SAVE AS PDF DIALOG
+        async function triggerPrintDialog() {
+            const ready = await preparePrintableContainer();
+            if (!ready) return;
+
             setTimeout(() => {
                 window.print();
-                printDiv.classList.add('hidden');
+                document.getElementById('printableLabRecord').classList.add('hidden');
             }, 600);
+        }
+
+        // TRIGGER 2: DIRECT PDF FILE DOWNLOAD VIA HTML2PDF.JS
+        async function downloadDirectPDF() {
+            const ready = await preparePrintableContainer();
+            if (!ready) return;
+
+            const element = document.getElementById('printableLabRecord');
+            const opt = {
+                margin: 10,
+                filename: `${student.regNo}_${courseConfig.code}_LabRecord.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['css', 'legacy'] }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.classList.add('hidden');
+                alert("Lab Record PDF downloaded successfully!");
+            });
         }
     </script>
 </body>
