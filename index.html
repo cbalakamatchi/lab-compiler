@@ -61,6 +61,7 @@
         .gap-4 { gap: 16px; }
         .grid { display: grid; }
         .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
         .grid-admin { grid-template-columns: 1.15fr 1fr; gap: 20px; }
 
         .badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; }
@@ -68,28 +69,16 @@
         .badge-green { background: #d1fae5; color: #065f46; }
         .badge-gray { background: #f1f5f9; color: #475569; }
 
-        /* STRICT PDF PRINT & EXPORT MEDIA CSS */
-        .pdf-page {
-            width: 210mm;
-            min-height: 296mm;
-            max-height: 296mm;
-            padding: 16mm 18mm;
-            margin: 0 auto;
-            box-sizing: border-box;
-            page-break-after: always !important;
-            break-after: page !important;
-            position: relative;
-            background: #ffffff !important;
-            color: #000000 !important;
-            overflow: hidden;
-            font-family: 'Times New Roman', Times, serif;
-        }
-
+        /* STRICT PDF PRINT MEDIA CSS */
         @media print {
-            body { background: #ffffff !important; padding: 0 !important; margin: 0 !important; }
+            @page { size: A4 portrait; margin: 12mm; }
+            body { background: #ffffff !important; color: #000000 !important; padding: 0 !important; margin: 0 !important; }
             body * { visibility: hidden !important; }
             #printableLabRecord, #printableLabRecord * { visibility: visible !important; }
             #printableLabRecord { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; background: #ffffff !important; }
+            .page-break { page-break-after: always !important; break-after: page !important; padding-bottom: 25px; background: #ffffff !important; }
+            pre, code, div, p, table, th, td { background: transparent !important; box-shadow: none !important; }
+            .record-footer { position: fixed; bottom: 5mm; left: 0; right: 0; text-align: center; font-size: 10pt; font-weight: bold; border-top: 1px solid #000; padding-top: 5px; }
         }
     </style>
 </head>
@@ -104,7 +93,7 @@
                     <span style="background: #3b82f6; width: 10px; height: 10px; border-radius: 50%;"></span>
                     <h1 style="font-size: 20px; font-weight: 700;">HITS Faculty Administration</h1>
                 </div>
-                <p style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Manage multiple courses, upload program lists per course, and generate student practice links.</p>
+                <p style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Configure Course (BCA / MCA), upload programs, and share student practice links.</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="generateAndCopyStudentLink()" class="btn btn-primary" style="background: #10b981;">
@@ -129,47 +118,38 @@
             </div>
         </div>
 
-        <!-- MULTI-COURSE MANAGEMENT BAR -->
+        <!-- COURSE INFORMATION (WITH BCA / MCA SELECTOR) -->
         <div class="pro-card">
-            <div class="flex justify-between items-center" style="margin-bottom: 12px;">
-                <h2 style="font-size: 15px; font-weight: 700; color: #1e293b;">
-                    <i class="fa-solid fa-book-bookmark" style="color: var(--primary);"></i> Active Course Management
-                </h2>
-                <button onclick="openAddNewCourseModal()" class="btn btn-primary" style="font-size: 12px; padding: 6px 12px;">
-                    <i class="fa-solid fa-plus"></i> Add New Course
-                </button>
-            </div>
-
-            <div class="grid grid-2 gap-4">
+            <h2 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #1e293b;">
+                <i class="fa-solid fa-book-bookmark" style="color: var(--primary);"></i> Course & Degree Information
+            </h2>
+            <div class="grid grid-3 gap-3">
                 <div>
-                    <label>Select Course to Configure:</label>
-                    <select id="adminCourseSelector" onchange="switchAdminActiveCourse()"></select>
+                    <label>Degree Program *</label>
+                    <select id="degreeSelect" onchange="syncCourseInfo()">
+                        <option value="BCA">BCA (Bachelor of Computer Applications)</option>
+                        <option value="MCA">MCA (Master of Computer Applications)</option>
+                    </select>
                 </div>
-                <div class="flex gap-2 items-end">
-                    <div style="flex: 1;">
-                        <label>Course Code:</label>
-                        <input type="text" id="courseCodeInput" onchange="syncCurrentCourseDetails()">
-                    </div>
-                    <div style="flex: 2;">
-                        <label>Course Name:</label>
-                        <input type="text" id="courseNameInput" onchange="syncCurrentCourseDetails()">
-                    </div>
-                    <button onclick="deleteActiveCourse()" class="btn btn-danger" title="Delete this Course" style="padding: 9px 12px;">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
+                <div>
+                    <label>Course Code *</label>
+                    <input type="text" id="courseCodeInput" value="BCA41001" placeholder="e.g. BCA41001 or MCA21001" onchange="syncCourseInfo()">
+                </div>
+                <div>
+                    <label>Course Name *</label>
+                    <input type="text" id="courseNameInput" value="PROBLEM SOLVING & PROGRAMMING LABORATORY" placeholder="e.g. ADVANCED JAVA LAB" onchange="syncCourseInfo()">
                 </div>
             </div>
         </div>
 
-        <!-- MAIN UPLOADER & PROGRAM LIST (SCOPED TO ACTIVE COURSE) -->
+        <!-- MAIN UPLOADER & PROGRAM LIST -->
         <div class="grid grid-admin">
             <!-- LEFT: UPLOAD & PARSER -->
             <div class="pro-card">
                 <h2 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #1e293b;">
-                    <i class="fa-solid fa-file-arrow-up" style="color: var(--primary);"></i> Upload Programs for Current Course
+                    <i class="fa-solid fa-file-arrow-up" style="color: var(--primary);"></i> Upload Course Programs
                 </h2>
                 
-                <!-- Dropzone for documents -->
                 <div onclick="triggerDocUpload()" style="border: 2px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; padding: 25px; text-align: center; cursor: pointer;">
                     <i class="fa-solid fa-file-lines" style="font-size: 32px; color: var(--primary); margin-bottom: 8px;"></i>
                     <p style="font-weight: 600; font-size: 13px;">Click to Upload Syllabus / Document</p>
@@ -177,16 +157,14 @@
                 </div>
                 <input type="file" id="docFileInput" accept=".docx,.txt,.c,.cpp,.java,.py,.sql,.json" onchange="handleDocumentUpload(event)" class="hidden">
 
-                <!-- Line-by-line Paste Input -->
                 <div style="margin-top: 15px;">
                     <label>Or Paste Program Syllabus List (Line-by-Line):</label>
-                    <textarea id="documentTextArea" style="height: 110px; font-size: 12px; line-height: 1.5;" placeholder="1. Write a program to find factorial of a given number&#10;2. Write a program to check prime number&#10;3. Create table Student and insert three records"></textarea>
+                    <textarea id="documentTextArea" style="height: 120px; font-size: 12px; line-height: 1.5;" placeholder="1. Write a program to find factorial of a given number&#10;2. Write a program to check prime or not&#10;3. Create table Student and insert three records"></textarea>
                     <button onclick="parseTextLineByLine()" class="btn btn-secondary" style="width: 100%; margin-top: 8px;">
                         <i class="fa-solid fa-wand-magic-sparkles"></i> Parse Programs Line-by-Line
                     </button>
                 </div>
 
-                <!-- Single Program Manual Add -->
                 <div style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 12px;">
                     <label>Add Single Program Manually:</label>
                     <div class="flex flex-col gap-2">
@@ -202,7 +180,7 @@
                             <input type="text" id="manualTarget" placeholder="Expected Target Output (optional)">
                         </div>
                         <button onclick="addSingleProgramManual()" class="btn btn-primary" style="font-size: 12px;">
-                            <i class="fa-solid fa-plus"></i> Add to Course
+                            <i class="fa-solid fa-plus"></i> Add Program
                         </button>
                     </div>
                 </div>
@@ -214,18 +192,18 @@
                     <div class="flex justify-between items-center" style="margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
                         <div>
                             <h2 style="font-size: 15px; font-weight: 700; color: #1e293b;">Uploaded Program List</h2>
-                            <span id="activeCourseSubhead" style="font-size: 11px; color: #64748b;">Programs for active course</span>
+                            <span style="font-size: 11px; color: #64748b;">These programs will appear in the student workspace</span>
                         </div>
                         <div class="flex gap-2 items-center">
                             <span id="programCountBadge" class="badge badge-blue">0 Programs</span>
-                            <button onclick="clearAllProgramsForCurrentCourse()" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="clearAllPrograms()" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                     <div id="adminProgramList" style="max-height: 420px; overflow-y: auto;" class="flex flex-col gap-2"></div>
                 </div>
 
                 <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 12px;">
-                    <p style="font-size: 11px; color: #64748b;"><i class="fa-solid fa-shield-halved"></i> <strong>Validation Guard:</strong> Register Numbers starting with <strong>26SU</strong> or <strong>26SP</strong> or university emails.</p>
+                    <p style="font-size: 11px; color: #64748b;"><i class="fa-solid fa-shield-halved"></i> <strong>Validation Guard:</strong> Register Numbers with prefix <strong>26SU</strong> or <strong>26SP</strong> or university emails.</p>
                 </div>
             </div>
         </div>
@@ -248,16 +226,16 @@
                 <form onsubmit="handleStudentLogin(event)" class="flex flex-col gap-3">
                     <div>
                         <label>Student Full Name *</label>
-                        <input type="text" id="sName" required placeholder="e.g. Bala">
+                        <input type="text" id="sName" required placeholder="e.g. John Doe">
                     </div>
                     <div>
                         <label>Register Number *</label>
-                        <input type="text" id="sRegNo" required placeholder="e.g. 26SU2460001" style="text-transform: uppercase;">
+                        <input type="text" id="sRegNo" required placeholder="e.g. 26SU2460001 or 26SP2001" style="text-transform: uppercase;">
                     </div>
                     <div class="grid grid-2 gap-2">
                         <div>
                             <label>Roll Number (Opt)</label>
-                            <input type="text" id="sRollNo" placeholder="e.g. 12345">
+                            <input type="text" id="sRollNo" placeholder="e.g. 23435">
                         </div>
                         <div>
                             <label>Email (Opt)</label>
@@ -277,16 +255,11 @@
         <!-- MAIN STUDENT WORKSPACE -->
         <div id="studentMainContent" class="hidden app-container">
             <header class="pro-card flex justify-between items-center" style="padding: 14px 20px;">
-                <div class="flex items-center gap-3">
-                    <div>
-                        <label style="margin: 0; font-size: 11px; color: #64748b;">Active Course:</label>
-                        <select id="studentCourseSelect" onchange="onStudentCourseChanged()" style="font-weight: 700; color: #1e293b; padding: 6px 10px;"></select>
-                    </div>
-                    <div style="border-left: 1px solid var(--border-color); padding-left: 15px;">
-                        <p style="font-size: 12px; color: #64748b;" id="stStudentIdentity">Logged in as: Student</p>
-                    </div>
+                <div>
+                    <h1 style="font-size: 17px; font-weight: 700;" id="stCourseHeading">BCA41001 - Programming Lab</h1>
+                    <p style="font-size: 12px; color: #64748b;" id="stStudentIdentity">Logged in as: Student</p>
                 </div>
-                <!-- ONLY OPTION: DOWNLOAD PDF -->
+                <!-- ONLY DOWNLOAD PDF OPTION -->
                 <div>
                     <button onclick="downloadDirectPDF()" class="btn btn-success" style="font-size: 13px; padding: 10px 18px;">
                         <i class="fa-solid fa-file-arrow-down"></i> Download PDF
@@ -295,7 +268,7 @@
             </header>
 
             <div class="grid" style="grid-template-columns: var(--sidebar-w) 1fr; gap: 20px;">
-                <!-- SIDEBAR: EXERCISES LIST FOR SELECTED COURSE -->
+                <!-- SIDEBAR: EXERCISES LIST -->
                 <div class="pro-card" style="padding: 16px;">
                     <div class="flex justify-between items-center" style="margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
                         <h3 style="font-size: 13px; font-weight: 700; color: #1e293b;">Course Program List</h3>
@@ -337,7 +310,7 @@
                         <label style="font-size: 11px; color: #94a3b8; margin-bottom: 3px;">
                             <i class="fa-solid fa-keyboard"></i> Standard Input (stdin for scanf / cin / input):
                         </label>
-                        <input type="text" id="stdinInputBox" class="font-mono" style="background: #1e293b; color: #f8fafc; border-color: #334155; padding: 6px 10px; font-size: 12px;" placeholder="Optional inputs (e.g. 42)">
+                        <input type="text" id="stdinInputBox" class="font-mono" style="background: #1e293b; color: #f8fafc; border-color: #334155; padding: 6px 10px; font-size: 12px;" placeholder="Optional standard inputs (e.g. 5 10)">
                     </div>
 
                     <!-- Output Console Window -->
@@ -363,164 +336,70 @@
         </div>
     </div>
 
-    <!-- ==================== STRICT PDF GENERATION CONTAINER ==================== -->
+    <!-- ==================== HIDDEN PDF GENERATION CONTAINER ==================== -->
     <div id="printableLabRecord" class="hidden"></div>
 
     <script>
-        // ==================== AUTHENTIC HINDUSTAN UNIVERSITY VECTOR LOGO ====================
-        function getCollegeLogoHtml(width = 540) {
+        // OFFICIAL HINDUSTAN UNIVERSITY VECTOR LOGO GENERATOR (SCALED FOR A4 PAGE)
+        function getCollegeLogoHtml() {
             return `
-            <div style="text-align: center; margin: 0 auto; width: 100%; max-width: ${width}px;">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 110" width="100%" height="auto">
-                    <!-- Left Cogwheel Emblem -->
-                    <g transform="translate(15, 5)">
-                        <!-- Orange 16-Tooth Gear Outer Ring -->
-                        <g fill="#f26522">
-                            <circle cx="50" cy="50" r="44"/>
-                            <rect x="43" y="1" width="14" height="98" rx="3" />
-                            <rect x="43" y="1" width="14" height="98" rx="3" transform="rotate(22.5 50 50)" />
-                            <rect x="43" y="1" width="14" height="98" rx="3" transform="rotate(45 50 50)" />
-                            <rect x="43" y="1" width="14" height="98" rx="3" transform="rotate(67.5 50 50)" />
-                            <rect x="43" y="1" width="14" height="98" rx="3" transform="rotate(90 50 50)" />
-                            <rect x="43" y="1" width="14" height="98" rx="3" transform="rotate(112.5 50 50)" />
-                            <rect x="43" y="1" width="14" height="98" rx="3" transform="rotate(135 50 50)" />
-                            <rect x="43" y="1" width="14" height="98" rx="3" transform="rotate(157.5 50 50)" />
-                        </g>
-                        <!-- Inner White Gap -->
-                        <circle cx="50" cy="50" r="38" fill="#ffffff" />
-                        <!-- Emerald Green Ring -->
-                        <circle cx="50" cy="50" r="35" fill="#0b7a3e" />
-                        <circle cx="50" cy="50" r="24" fill="#ffffff" />
-                        <!-- Center Gold/Orange Crest Symbol -->
-                        <circle cx="50" cy="50" r="22" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5" />
-                        <path d="M 50 34 L 53 43 L 60 45 L 55 50 L 57 57 L 50 53 L 43 57 L 45 50 L 40 45 L 47 43 Z" fill="#f26522" />
-                        <text x="50" y="69" font-family="'Arial', sans-serif" font-size="7" font-weight="900" fill="#0b7a3e" text-anchor="middle">HITS</text>
+            <div style="text-align: center; margin: 0 auto; width: 100%; max-width: 280px;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 70" width="100%" height="auto">
+                    <!-- Crest Emblem -->
+                    <g transform="translate(10, 5)">
+                        <circle cx="30" cy="30" r="28" fill="#1e3a8a" stroke="#f97316" stroke-width="2.5"/>
+                        <circle cx="30" cy="30" r="20" fill="#047857"/>
+                        <path d="M 30 10 A 20 20 0 0 0 30 50 A 20 20 0 0 0 30 10 Z" fill="none" stroke="#ffffff" stroke-width="1.2" opacity="0.6"/>
+                        <line x1="10" y1="30" x2="50" y2="30" stroke="#ffffff" stroke-width="1.2" opacity="0.6"/>
+                        <text x="30" y="34" font-family="'Inter', Arial, sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="1">HITS</text>
                     </g>
-                    <!-- Right Typography -->
-                    <text x="135" y="47" font-family="'Arial', 'Helvetica', sans-serif" font-size="36" font-weight="900" fill="#000000" letter-spacing="1.2">HINDUSTAN</text>
-                    <text x="137" y="73" font-family="'Arial', 'Helvetica', sans-serif" font-size="13.5" font-weight="800" fill="#000000" letter-spacing="1.5">INSTITUTE OF TECHNOLOGY &amp; SCIENCE</text>
-                    <text x="137" y="94" font-family="'Arial', 'Helvetica', sans-serif" font-size="11.5" font-weight="700" fill="#000000" letter-spacing="1.1">(DEEMED TO BE UNIVERSITY)</text>
+                    <!-- University Typography -->
+                    <text x="80" y="27" font-family="'Times New Roman', serif" font-size="20" font-weight="900" fill="#0f172a" letter-spacing="0.5">HINDUSTAN</text>
+                    <text x="80" y="44" font-family="'Arial', sans-serif" font-size="9" font-weight="800" fill="#1e3a8a" letter-spacing="0.8">INSTITUTE OF TECHNOLOGY & SCIENCE</text>
+                    <text x="80" y="58" font-family="'Arial', sans-serif" font-size="8" font-weight="700" fill="#f97316" letter-spacing="0.5">(DEEMED TO BE UNIVERSITY)</text>
+                    <line x1="80" y1="64" x2="440" y2="64" stroke="#cbd5e1" stroke-width="1"/>
                 </svg>
             </div>
             `;
         }
 
-        // ==================== VECTOR FLOWCHART / SCHEMA GENERATOR ====================
-        function generateVectorFlowchartHtml(code, lang) {
-            if (lang === 'sql') {
-                return `
-                <div style="text-align: center; margin: 10px auto;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 170" width="100%" height="auto" style="max-width: 440px;">
-                        <defs>
-                            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#000000"/>
-                            </marker>
-                        </defs>
-                        <!-- Table Schema Block -->
-                        <rect x="20" y="10" width="190" height="60" rx="4" fill="#f8fafc" stroke="#000000" stroke-width="1.5"/>
-                        <text x="115" y="32" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle">TABLE SCHEMA (DDL)</text>
-                        <text x="115" y="52" font-family="Arial" font-size="10" fill="#334155" text-anchor="middle">Define Columns &amp; Types</text>
-                        
-                        <!-- Connector -->
-                        <line x1="210" y1="40" x2="250" y2="40" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
+        // APPLICATION STATE
+        let courseInfo = {
+            code: "BCA41001",
+            name: "PROBLEM SOLVING & PROGRAMMING LABORATORY",
+            degree: "BCA" // "BCA" or "MCA"
+        };
 
-                        <!-- Insert Block -->
-                        <rect x="250" y="10" width="190" height="60" rx="4" fill="#f8fafc" stroke="#000000" stroke-width="1.5"/>
-                        <text x="345" y="32" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle">TUPLE INSERTION (DML)</text>
-                        <text x="345" y="52" font-family="Arial" font-size="10" fill="#334155" text-anchor="middle">INSERT Record Values</text>
-
-                        <!-- Connector Down -->
-                        <line x1="345" y1="70" x2="345" y2="105" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
-
-                        <!-- Query Execution Block -->
-                        <rect x="135" y="105" width="220" height="55" rx="4" fill="#f1f5f9" stroke="#000000" stroke-width="1.5"/>
-                        <text x="245" y="128" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle">RELATIONAL QUERY (DQL)</text>
-                        <text x="245" y="146" font-family="Arial" font-size="10" fill="#334155" text-anchor="middle">SELECT Tuples &amp; Display Table</text>
-                    </svg>
-                </div>`;
-            }
-
-            // Procedural Flowchart (C, C++, Java, Python)
-            return `
-            <div style="text-align: center; margin: 10px auto;">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 140" width="100%" height="auto" style="max-width: 500px;">
-                    <defs>
-                        <marker id="arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                            <path d="M 0 0 L 10 5 L 0 10 z" fill="#000000"/>
-                        </marker>
-                    </defs>
-                    <!-- Start Capsule -->
-                    <rect x="10" y="50" width="85" height="40" rx="20" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
-                    <text x="52" y="75" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle">START</text>
-                    <line x1="95" y1="70" x2="125" y2="70" stroke="#000000" stroke-width="1.5" marker-end="url(#arr)"/>
-
-                    <!-- Input / Init Block -->
-                    <polygon points="135,90 150,50 240,50 225,90" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
-                    <text x="187" y="74" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle">Read Input</text>
-                    <line x1="235" y1="70" x2="265" y2="70" stroke="#000000" stroke-width="1.5" marker-end="url(#arr)"/>
-
-                    <!-- Process Block -->
-                    <rect x="265" y="50" width="95" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
-                    <text x="312" y="74" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle">Execute Logic</text>
-                    <line x1="360" y1="70" x2="390" y2="70" stroke="#000000" stroke-width="1.5" marker-end="url(#arr)"/>
-
-                    <!-- Output Block -->
-                    <polygon points="400,90 415,50 495,50 480,90" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
-                    <text x="447" y="74" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle">Display Output</text>
-                    
-                    <!-- Line to Stop -->
-                    <line x1="447" y1="90" x2="447" y2="105" stroke="#000000" stroke-width="1.5"/>
-                    <line x1="447" y1="105" x2="52" y2="105" stroke="#000000" stroke-width="1.5"/>
-                    <line x1="52" y1="105" x2="52" y2="120" stroke="#000000" stroke-width="1.5" marker-end="url(#arr)"/>
-
-                    <!-- Stop Capsule -->
-                    <rect x="10" y="120" width="85" height="28" rx="14" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
-                    <text x="52" y="138" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle">STOP</text>
-                </svg>
-            </div>`;
-        }
-
-        // ==================== MULTI-COURSE APPLICATION STATE ====================
-        let courses = [
+        let coursePrograms = [
             {
-                id: "course_1",
-                code: "BCA41001",
-                name: "PROBLEM SOLVING & PROGRAMMING LABORATORY",
-                programs: [
-                    {
-                        title: "Read an integer and display it",
-                        lang: "c",
-                        code: "",
-                        sampleInput: "42",
-                        expectedOutput: "42"
-                    }
-                ]
+                title: "Read an integer and display it",
+                lang: "c",
+                code: "",
+                sampleInput: "42",
+                expectedOutput: "42"
             },
             {
-                id: "course_2",
-                code: "BCA41002",
-                name: "DATABASE MANAGEMENT SYSTEMS LABORATORY",
-                programs: [
-                    {
-                        title: "Create Table and Query Student Records",
-                        lang: "sql",
-                        code: "",
-                        sampleInput: "",
-                        expectedOutput: "Aravind"
-                    }
-                ]
+                title: "Create Student Table and Query Tuples",
+                lang: "sql",
+                code: "",
+                sampleInput: "",
+                expectedOutput: "Aravind"
             }
         ];
 
-        let activeCourseId = "course_1";
         let student = null;
         let activeIdx = 0;
         let savedRecords = [];
         let currentPassed = false;
         let lastOutput = "";
 
-        function getActiveCourse() {
-            return courses.find(c => c.id === activeCourseId) || courses[0];
+        // HELPER FUNCTIONS FOR DYNAMIC BCA/MCA DISPLAY
+        function getDegreeFullTitle() {
+            return (courseInfo.degree === 'MCA') ? "MASTER OF COMPUTER APPLICATIONS" : "BACHELOR OF COMPUTER APPLICATIONS";
+        }
+
+        function getDegreeShort() {
+            return (courseInfo.degree === 'MCA') ? "MCA" : "BCA";
         }
 
         // TAB INDENTATION SUPPORT IN EDITOR
@@ -547,14 +426,11 @@
                     }
                     if (decodedStr) {
                         const parsed = JSON.parse(decodedStr);
-                        if (parsed.courses && Array.isArray(parsed.courses)) {
-                            courses = parsed.courses;
-                            activeCourseId = courses[0].id;
-                        }
+                        if (parsed.p) coursePrograms = parsed.p;
+                        if (parsed.ci) courseInfo = parsed.ci;
                         
                         document.getElementById('adminPortalView').classList.add('hidden');
                         document.getElementById('studentPortalView').classList.remove('hidden');
-                        populateStudentCourseDropdown();
                         return;
                     }
                 }
@@ -564,73 +440,13 @@
 
             document.getElementById('adminPortalView').classList.remove('hidden');
             document.getElementById('studentPortalView').classList.add('hidden');
-            renderAdminCourseSelector();
             renderAdminProgramList();
         };
 
-        // ==================== ADMIN MULTI-COURSE LOGIC ====================
-        function renderAdminCourseSelector() {
-            const sel = document.getElementById('adminCourseSelector');
-            sel.innerHTML = "";
-            courses.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = `${c.code} - ${c.name}`;
-                if (c.id === activeCourseId) opt.selected = true;
-                sel.appendChild(opt);
-            });
-
-            const current = getActiveCourse();
-            document.getElementById('courseCodeInput').value = current.code;
-            document.getElementById('courseNameInput').value = current.name;
-            document.getElementById('activeCourseSubhead').textContent = `Programs for: ${current.code}`;
-        }
-
-        function switchAdminActiveCourse() {
-            activeCourseId = document.getElementById('adminCourseSelector').value;
-            renderAdminCourseSelector();
-            renderAdminProgramList();
-        }
-
-        function syncCurrentCourseDetails() {
-            const current = getActiveCourse();
-            current.code = document.getElementById('courseCodeInput').value.trim() || "BCA41001";
-            current.name = document.getElementById('courseNameInput').value.trim() || "LAB WORKBENCH";
-            renderAdminCourseSelector();
-        }
-
-        function openAddNewCourseModal() {
-            const code = prompt("Enter New Course Code (e.g. CS3301):");
-            if (!code) return;
-            const name = prompt("Enter New Course Name (e.g. DATA STRUCTURES LABORATORY):");
-            if (!name) return;
-
-            const newId = "course_" + (courses.length + 1) + "_" + Date.now();
-            courses.push({
-                id: newId,
-                code: code.trim().toUpperCase(),
-                name: name.trim().toUpperCase(),
-                programs: []
-            });
-
-            activeCourseId = newId;
-            renderAdminCourseSelector();
-            renderAdminProgramList();
-            alert(`Course "${code}" added successfully! Now upload or add programs for this course.`);
-        }
-
-        function deleteActiveCourse() {
-            if (courses.length <= 1) {
-                alert("At least one course must remain in the workbench!");
-                return;
-            }
-            const current = getActiveCourse();
-            if (confirm(`Are you sure you want to delete course ${current.code} - ${current.name}?`)) {
-                courses = courses.filter(c => c.id !== activeCourseId);
-                activeCourseId = courses[0].id;
-                renderAdminCourseSelector();
-                renderAdminProgramList();
-            }
+        function syncCourseInfo() {
+            courseInfo.degree = document.getElementById('degreeSelect').value || "BCA";
+            courseInfo.code = document.getElementById('courseCodeInput').value.trim() || (courseInfo.degree === 'MCA' ? "MCA21001" : "BCA41001");
+            courseInfo.name = document.getElementById('courseNameInput').value.trim() || "PROGRAMMING LABORATORY";
         }
 
         // ==================== DOCUMENT & LINE-BY-LINE PARSER ====================
@@ -643,7 +459,6 @@
             if (!file) return;
 
             const ext = file.name.split('.').pop().toLowerCase();
-            const current = getActiveCourse();
 
             if (ext === 'docx') {
                 const reader = new FileReader();
@@ -658,8 +473,8 @@
                 reader.onload = function(evt) {
                     try {
                         const parsed = JSON.parse(evt.target.result);
-                        if (Array.isArray(parsed)) current.programs = parsed;
-                        else if (parsed.programs) current.programs = parsed.programs;
+                        if (Array.isArray(parsed)) coursePrograms = parsed;
+                        else if (parsed.programs) coursePrograms = parsed.programs;
                         renderAdminProgramList();
                     } catch(err) { alert("Invalid JSON: " + err.message); }
                 };
@@ -672,7 +487,7 @@
                         processLineByLineText(text);
                     } else {
                         const langMap = { 'c':'c', 'cpp':'cpp', 'java':'java', 'py':'python', 'sql':'sql' };
-                        current.programs.push({
+                        coursePrograms.push({
                             title: file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
                             lang: langMap[ext] || "c",
                             code: "",
@@ -699,13 +514,11 @@
         function processLineByLineText(rawText) {
             const lines = rawText.split(/\r?\n/);
             let addedCount = 0;
-            const current = getActiveCourse();
 
             lines.forEach(rawLine => {
                 let line = rawLine.trim();
                 if (!line) return;
 
-                // Strip leading numbering: "1.", "1)", "Ex 1:", "Exp 1 - "
                 line = line.replace(/^(?:ex(?:p)?\s*\d+|experiment\s*\d+|\d+)[\.\)\:\-]\s*/i, "").trim();
 
                 if (line.length < 5 || /^(page\s*\d+|syllabus|contents|index|table of contents)$/i.test(line)) return;
@@ -716,10 +529,10 @@
                 else if (/\b(java|class |jvm)\b/i.test(line)) detectedLang = "java";
                 else if (/\b(c\+\+|cpp|cout)\b/i.test(line)) detectedLang = "cpp";
 
-                current.programs.push({
+                coursePrograms.push({
                     title: line,
                     lang: detectedLang,
-                    code: "", // Starts empty for student
+                    code: "",
                     sampleInput: "",
                     expectedOutput: ""
                 });
@@ -727,21 +540,20 @@
             });
 
             renderAdminProgramList();
-            alert(`Parsed ${addedCount} programs successfully for course: ${current.code}!`);
+            alert(`Parsed ${addedCount} programs successfully from document!`);
         }
 
         function addSingleProgramManual() {
             const title = document.getElementById('manualTitle').value.trim();
             const lang = document.getElementById('manualLang').value;
             const target = document.getElementById('manualTarget').value.trim();
-            const current = getActiveCourse();
 
             if (!title) {
                 alert("Please specify a program title!");
                 return;
             }
 
-            current.programs.push({
+            coursePrograms.push({
                 title,
                 lang,
                 code: "",
@@ -757,9 +569,7 @@
         function renderAdminProgramList() {
             const container = document.getElementById('adminProgramList');
             container.innerHTML = "";
-            const current = getActiveCourse();
-            
-            current.programs.forEach((p, idx) => {
+            coursePrograms.forEach((p, idx) => {
                 container.innerHTML += `
                     <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
                         <div>
@@ -770,27 +580,28 @@
                         <button onclick="removeProgram(${idx})" class="btn btn-danger" style="padding: 2px 7px; font-size: 11px;"><i class="fa-solid fa-xmark"></i></button>
                     </div>`;
             });
-            document.getElementById('programCountBadge').textContent = `${current.programs.length} Programs`;
+            document.getElementById('programCountBadge').textContent = `${coursePrograms.length} Programs`;
         }
 
         function removeProgram(idx) {
-            const current = getActiveCourse();
-            current.programs.splice(idx, 1);
+            coursePrograms.splice(idx, 1);
             renderAdminProgramList();
         }
 
-        function clearAllProgramsForCurrentCourse() {
-            const current = getActiveCourse();
-            if (confirm(`Clear all programs for course ${current.code}?`)) {
-                current.programs = [];
+        function clearAllPrograms() {
+            if (confirm("Clear all programs in this course?")) {
+                coursePrograms = [];
                 renderAdminProgramList();
             }
         }
 
-        // ==================== GENERATE MULTI-COURSE PRACTICE LINK ====================
+        // ==================== GENERATE COMPACT PRACTICE LINK ====================
         function generateAndCopyStudentLink() {
-            syncCurrentCourseDetails();
-            const payload = { courses: courses };
+            syncCourseInfo();
+            const payload = {
+                ci: courseInfo,
+                p: coursePrograms
+            };
 
             const jsonStr = JSON.stringify(payload);
             const compressed = LZString.compressToEncodedURIComponent(jsonStr);
@@ -801,7 +612,7 @@
 
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(url).then(() => {
-                    alert("Practice link containing all courses copied to clipboard!");
+                    alert("Student Practice link copied to clipboard!");
                 }).catch(() => {
                     alert("Practice link ready in top banner!");
                 });
@@ -820,30 +631,10 @@
             const ws = XLSX.utils.json_to_sheet(logs);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Logs");
-            XLSX.writeFile(wb, "Student_Practice_Logs.xlsx");
+            XLSX.writeFile(wb, `${courseInfo.code}_Student_Logs.xlsx`);
         }
 
-        // ==================== STUDENT WORKSPACE & COURSE SELECTION ====================
-        function populateStudentCourseDropdown() {
-            const sel = document.getElementById('studentCourseSelect');
-            sel.innerHTML = "";
-            courses.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = `${c.code} - ${c.name}`;
-                if (c.id === activeCourseId) opt.selected = true;
-                sel.appendChild(opt);
-            });
-        }
-
-        function onStudentCourseChanged() {
-            activeCourseId = document.getElementById('studentCourseSelect').value;
-            activeIdx = 0;
-            loadStudentCourseRecords();
-            renderStudentExerciseList();
-            loadActiveStudentExercise();
-        }
-
+        // ==================== STUDENT WORKSPACE & RUNNER ====================
         function handleStudentLogin(e) {
             e.preventDefault();
             const name = document.getElementById('sName').value.trim();
@@ -869,44 +660,38 @@
                 rollNo: document.getElementById('sRollNo').value.trim()
             };
 
-            // Audit Log
-            let logs = JSON.parse(localStorage.getItem('hits_lab_logs') || '[]');
-            logs.unshift({ timestamp: new Date().toLocaleString(), name: student.name, regNo: student.regNo, action: "WORKSPACE_OPEN" });
-            localStorage.setItem('hits_lab_logs', JSON.stringify(logs.slice(0, 500)));
-
-            document.getElementById('studentAuthModal').classList.add('hidden');
-            document.getElementById('studentMainContent').classList.remove('hidden');
-            document.getElementById('stStudentIdentity').textContent = `Logged in as: ${student.name} (${student.regNo})`;
-
-            populateStudentCourseDropdown();
-            loadStudentCourseRecords();
-            renderStudentExerciseList();
-            loadActiveStudentExercise();
-        }
-
-        function loadStudentCourseRecords() {
-            const current = getActiveCourse();
-            const localKey = `hits_saved_${current.code}_${student.regNo}`;
+            const localKey = `hits_saved_${courseInfo.code}_${student.regNo}`;
             const cached = localStorage.getItem(localKey);
             if (cached) {
                 try { savedRecords = JSON.parse(cached); } catch(err){ savedRecords = []; }
             } else {
                 savedRecords = [];
             }
+
+            let logs = JSON.parse(localStorage.getItem('hits_lab_logs') || '[]');
+            logs.unshift({ timestamp: new Date().toLocaleString(), name: student.name, regNo: student.regNo, action: "WORKSPACE_OPEN" });
+            localStorage.setItem('hits_lab_logs', JSON.stringify(logs.slice(0, 500)));
+
+            document.getElementById('studentAuthModal').classList.add('hidden');
+            document.getElementById('studentMainContent').classList.remove('hidden');
+            document.getElementById('stCourseHeading').textContent = `${courseInfo.code} - ${courseInfo.name} (${getDegreeShort()})`;
+            document.getElementById('stStudentIdentity').textContent = `Logged in as: ${student.name} (${student.regNo})`;
+
+            renderStudentExerciseList();
+            loadActiveStudentExercise();
         }
 
         function renderStudentExerciseList() {
             const container = document.getElementById('studentExerciseList');
             container.innerHTML = "";
-            const current = getActiveCourse();
-            document.getElementById('stExerciseBadge').textContent = `${current.programs.length} Items`;
+            document.getElementById('stExerciseBadge').textContent = `${coursePrograms.length} Items`;
 
-            if (current.programs.length === 0) {
-                container.innerHTML = `<p style="font-size:12px; color:#64748b;">No exercises available for this course.</p>`;
+            if (coursePrograms.length === 0) {
+                container.innerHTML = `<p style="font-size:12px; color:#64748b;">No exercises available.</p>`;
                 return;
             }
 
-            current.programs.forEach((p, i) => {
+            coursePrograms.forEach((p, i) => {
                 const saved = savedRecords.find(r => r.title === p.title);
                 container.innerHTML += `
                     <button onclick="selectStudentExercise(${i})" class="btn btn-secondary" style="width: 100%; text-align: left; justify-content: space-between; font-size: 12px; padding: 9px; background: ${i === activeIdx ? '#eff6ff' : '#fff'}; border-color: ${i === activeIdx ? 'var(--primary)' : 'var(--border-color)'};">
@@ -927,8 +712,7 @@
         }
 
         function loadActiveStudentExercise() {
-            const current = getActiveCourse();
-            const p = current.programs[activeIdx];
+            const p = coursePrograms[activeIdx];
             if (!p) return;
 
             document.getElementById('activeExTitle').textContent = `${activeIdx + 1}. ${p.title}`;
@@ -945,7 +729,7 @@
                 currentPassed = true;
                 lastOutput = saved.output;
             } else {
-                // STARTS COMPLETELY EMPTY AS REQUESTED
+                // STARTS EMPTY SO STUDENTS WRITE CODE THEMSELVES
                 document.getElementById('codeEditorArea').value = "";
                 document.getElementById('terminalConsole').textContent = "Editor is empty. Write your solution code and click Run Program.";
                 document.getElementById('compilerStatusPill').textContent = "NOT EVALUATED";
@@ -957,8 +741,7 @@
 
         function switchProgramLang() {
             const sel = document.getElementById('codeLangSelect').value;
-            const current = getActiveCourse();
-            const p = current.programs[activeIdx];
+            const p = coursePrograms[activeIdx];
             if (p) {
                 p.lang = sel;
                 document.getElementById('activeLangTag').textContent = sel.toUpperCase();
@@ -976,8 +759,7 @@
         // ==================== DUAL-ENGINE COMPILER RUNNER ====================
         async function executeStudentCode() {
             const code = document.getElementById('codeEditorArea').value.trim();
-            const current = getActiveCourse();
-            const p = current.programs[activeIdx];
+            const p = coursePrograms[activeIdx];
             const consoleBox = document.getElementById('terminalConsole');
             const statusPill = document.getElementById('compilerStatusPill');
             const runBtn = document.getElementById('runCodeBtn');
@@ -1017,7 +799,7 @@
 
             let networkOk = false;
 
-            // TRY ENGINE 1: CLOUD SANDBOX (PISTON)
+            // TRY CLOUD SANDBOX (PISTON)
             try {
                 const target = pistonLangs[lang];
                 const res = await fetch('https://emkc.org/api/v2/piston/execute', {
@@ -1043,7 +825,7 @@
                 console.warn("Cloud sandbox unreachable. Switching to in-browser engine:", e);
             }
 
-            // FALLBACK ENGINE 2: IN-BROWSER SIMULATION RUNNER
+            // FALLBACK IN-BROWSER SIMULATION RUNNER
             if (!networkOk) {
                 consoleBox.textContent = "[Note: Executed via In-Browser Runtime Engine]\n";
                 const sim = runLocalSimulation(lang, code, stdin);
@@ -1079,7 +861,7 @@
             }
         }
 
-        // BROWSER CLIENT-SIDE SIMULATOR (HANDLES SQL & PROCEDURAL OFFLINE)
+        // BROWSER CLIENT-SIDE SIMULATOR
         function runLocalSimulation(lang, code, stdin) {
             if (lang === 'sql') {
                 const lines = code.split(';').map(l => l.trim()).filter(Boolean);
@@ -1122,8 +904,7 @@
                 return;
             }
 
-            const current = getActiveCourse();
-            const p = current.programs[activeIdx];
+            const p = coursePrograms[activeIdx];
             const dateStr = new Date().toLocaleDateString('en-GB');
 
             const entry = {
@@ -1138,14 +919,14 @@
             if (existingIdx >= 0) savedRecords[existingIdx] = entry;
             else savedRecords.push(entry);
 
-            // Persist scoped to active course
-            const localKey = `hits_saved_${current.code}_${student.regNo}`;
+            const localKey = `hits_saved_${courseInfo.code}_${student.regNo}`;
             localStorage.setItem(localKey, JSON.stringify(savedRecords));
 
             renderStudentExerciseList();
             alert(`Program "${p.title}" saved successfully to your lab record!`);
         }
 
+        // ==================== PROCEDURES & PURE SVG FLOWCHART GENERATOR ====================
         function generateProcedureFromCode(code, lang) {
             if (lang === 'sql') {
                 return "1. Connect to relational database engine.\n2. Execute DDL statements to specify relational schemas and attributes.\n3. Execute DML queries to insert tuples into defined relations.\n4. Execute DQL queries with projections and selections.\n5. Fetch and render tabular output tuples.";
@@ -1170,71 +951,160 @@
             return steps.join("\n");
         }
 
-        // ==================== STRICT PDF GENERATION ENGINE ====================
-        function buildStrictPrintableDocumentHtml() {
-            const logoSvg = getCollegeLogoHtml(520);
-            const current = getActiveCourse();
+        // PURE SVG FLOWCHART ENGINE (100% RELIABLE IN HTML2PDF, NO FOREIGN-OBJECT BUGS)
+        function generatePureSvgFlowchart(code, lang) {
+            if (lang === 'sql') {
+                return `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="100%" height="220" style="max-width: 340px; margin: 0 auto; display: block;">
+                    <defs>
+                        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                            <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000"/>
+                        </marker>
+                    </defs>
+                    <!-- Table Schema Box -->
+                    <rect x="40" y="10" width="280" height="70" rx="4" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+                    <rect x="40" y="10" width="280" height="22" rx="4" fill="#f1f5f9" stroke="#000000" stroke-width="1.5"/>
+                    <text x="180" y="25" font-family="'Times New Roman', serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#0f172a">DATABASE RELATION SCHEMA</text>
+                    <text x="50" y="46" font-family="'Courier New', monospace" font-size="10" fill="#334155">[PK] Record_ID (INTEGER)</text>
+                    <text x="50" y="62" font-family="'Courier New', monospace" font-size="10" fill="#334155">[COL] Attribute_Data (VARCHAR / TEXT)</text>
+                    
+                    <!-- Arrow 1 -->
+                    <line x1="180" y1="80" x2="180" y2="105" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
+                    
+                    <!-- Process Box: DDL/DML -->
+                    <rect x="65" y="108" width="230" height="34" rx="4" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+                    <text x="180" y="129" font-family="'Times New Roman', serif" font-size="11" font-weight="bold" text-anchor="middle">EXECUTE SQL QUERIES (DDL / DML)</text>
+                    
+                    <!-- Arrow 2 -->
+                    <line x1="180" y1="142" x2="180" y2="167" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
+                    
+                    <!-- Output Box -->
+                    <polygon points="65,170 305,170 285,204 45,204" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+                    <text x="175" y="191" font-family="'Times New Roman', serif" font-size="11" font-weight="bold" text-anchor="middle">FETCH & DISPLAY TUPLES</text>
+                    
+                    <!-- Arrow 3 -->
+                    <line x1="175" y1="204" x2="175" y2="225" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
+                    
+                    <!-- End Box -->
+                    <rect x="125" y="226" width="100" height="22" rx="11" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+                    <text x="175" y="241" font-family="'Times New Roman', serif" font-size="11" font-weight="bold" text-anchor="middle">STOP</text>
+                </svg>`;
+            }
+
+            // Procedural Flowchart (C, C++, Java, Python)
+            const hasCondition = code.includes("if") || code.includes("switch") || code.includes("for") || code.includes("while");
+
+            return `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 330" width="100%" height="280" style="max-width: 320px; margin: 0 auto; display: block;">
+                <defs>
+                    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000"/>
+                    </marker>
+                </defs>
+                <!-- 1. Start Pill -->
+                <rect x="110" y="10" width="120" height="28" rx="14" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+                <text x="170" y="28" font-family="'Times New Roman', serif" font-size="11" font-weight="bold" text-anchor="middle">START</text>
+                <line x1="170" y1="38" x2="170" y2="58" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+                <!-- 2. Read Input / Init (Parallelogram) -->
+                <polygon points="70,60 280,60 260,92 50,92" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+                <text x="165" y="80" font-family="'Times New Roman', serif" font-size="11" font-weight="bold" text-anchor="middle">INITIALIZE / READ INPUT</text>
+                <line x1="165" y1="92" x2="165" y2="114" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+                <!-- 3. Decision Diamond or Process -->
+                ${hasCondition ? `
+                <polygon points="165,115 250,140 165,165 80,140" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+                <text x="165" y="144" font-family="'Times New Roman', serif" font-size="10" font-weight="bold" text-anchor="middle">EVALUATE CONDITION</text>
+                <line x1="165" y1="165" x2="165" y2="187" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
+                ` : `
+                <rect x="70" y="116" width="190" height="32" rx="4" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+                <text x="165" y="136" font-family="'Times New Roman', serif" font-size="11" font-weight="bold" text-anchor="middle">EXECUTE COMPUTATION</text>
+                <line x1="165" y1="148" x2="165" y2="187" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
+                `}
+
+                <!-- 4. Process Box -->
+                <rect x="70" y="188" width="190" height="32" rx="4" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+                <text x="165" y="208" font-family="'Times New Roman', serif" font-size="11" font-weight="bold" text-anchor="middle">PROCESS LOGIC & DATA</text>
+                <line x1="165" y1="220" x2="165" y2="242" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+                <!-- 5. Display Output (Parallelogram) -->
+                <polygon points="70,244 280,244 260,276 50,276" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+                <text x="165" y="264" font-family="'Times New Roman', serif" font-size="11" font-weight="bold" text-anchor="middle">DISPLAY TARGET OUTPUT</text>
+                <line x1="165" y1="276" x2="165" y2="295" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+                <!-- 6. Stop Pill -->
+                <rect x="115" y="296" width="100" height="26" rx="13" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+                <text x="165" y="313" font-family="'Times New Roman', serif" font-size="11" font-weight="bold" text-anchor="middle">STOP</text>
+            </svg>`;
+        }
+
+        // ==================== PDF BUILDER WITH VECTOR COLLEGE LOGO ====================
+        async function buildPrintableDocumentHtml() {
+            const logoSvg = getCollegeLogoHtml();
 
             let html = `
-                <!-- PAGE 1: COVER PAGE (WITH LOGO) -->
-                <div class="pdf-page" style="text-align: center;">
-                    <div style="margin-top: 25px; margin-bottom: 25px;">
+                <!-- PAGE 1: COVER PAGE (WITH LOGO & DYNAMIC BCA/MCA) -->
+                <div class="page-break" style="padding: 10px 20px; text-align: center; font-family: 'Times New Roman', serif;">
+                    <div style="margin-bottom: 20px;">
                         ${logoSvg}
                     </div>
                     
-                    <p style="font-size: 13pt; font-weight: bold; margin-top: 35px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
-                    <p style="font-size: 13pt; font-weight: bold; margin-top: 6px;">BACHELOR OF COMPUTER APPLICATIONS</p>
+                    <p style="font-size: 13pt; font-weight: bold; margin-top: 25px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
+                    <p style="font-size: 13pt; font-weight: bold; margin-top: 5px;">${getDegreeFullTitle()}</p>
 
-                    <p style="font-size: 12pt; font-weight: bold; margin-top: 35px;">(SEMESTER – II)</p>
-                    <h2 style="font-size: 16pt; font-weight: bold; margin-top: 15px; text-transform: uppercase;">${current.code} – ${current.name}</h2>
-                    <p style="font-size: 14pt; font-weight: bold; margin-top: 10px;">Integrated Practical Lab Record</p>
+                    <p style="font-size: 12pt; font-weight: bold; margin-top: 25px;">(SEMESTER – II)</p>
+                    <h2 style="font-size: 15pt; font-weight: bold; margin-top: 15px;">${courseInfo.code} – ${courseInfo.name}</h2>
+                    <p style="font-size: 13pt; font-weight: bold; margin-top: 8px;">Integrated Practical Lab Record</p>
 
-                    <div style="border: 2px solid #000; padding: 22px; margin: 60px auto 0 auto; max-width: 460px; text-align: left; line-height: 2.2; font-size: 12pt; font-weight: bold;">
+                    <div style="border: 2px solid #000; padding: 18px; margin: 45px auto; max-width: 480px; text-align: left; line-height: 2.1; font-size: 12pt; font-weight: bold;">
                         <p style="margin:0;">Name &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${student.name}</p>
                         <p style="margin:0;">Register No &nbsp;&nbsp;&nbsp;: ${student.regNo}</p>
                         <p style="margin:0;">Roll No &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${student.rollNo || 'N/A'}</p>
+                        <p style="margin:0;">Degree &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${getDegreeShort()}</p>
                         <p style="margin:0;">Academic Year : 2024 – 2025</p>
                     </div>
                 </div>
 
-                <!-- PAGE 2: BONAFIDE CERTIFICATE (WITH LOGO) -->
-                <div class="pdf-page">
-                    <div style="text-align: center; margin-top: 20px; margin-bottom: 25px;">
-                        ${logoSvg}
-                        <p style="font-size: 13pt; font-weight: bold; margin-top: 20px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
-                        <p style="font-size: 13pt; font-weight: bold; margin-top: 6px;">BACHELOR OF COMPUTER APPLICATIONS</p>
-                        <p style="font-size: 12pt; font-weight: bold; margin-top: 6px;">(SEMESTER – II)</p>
+                <!-- PAGE 2: BONAFIDE CERTIFICATE (WITH LOGO & DYNAMIC BCA/MCA) -->
+                <div class="page-break" style="padding: 10px 20px; font-family: 'Times New Roman', serif;">
+                    <div style="text-align: center;">
+                        <div style="margin-bottom: 20px;">
+                            ${logoSvg}
+                        </div>
+                        <p style="font-size: 13pt; font-weight: bold; margin-top: 15px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
+                        <p style="font-size: 13pt; font-weight: bold; margin-top: 5px;">${getDegreeFullTitle()}</p>
+                        <p style="font-size: 12pt; font-weight: bold; margin-top: 5px;">(SEMESTER – II)</p>
 
-                        <h2 style="font-size: 18pt; font-weight: bold; margin-top: 30px; margin-bottom: 30px; text-decoration: underline;">Bonafide Certificate</h2>
+                        <h2 style="font-size: 17pt; font-weight: bold; margin-top: 25px; margin-bottom: 25px; text-decoration: underline;">Bonafide Certificate</h2>
                     </div>
 
-                    <p style="font-size: 12pt; line-height: 2.2; text-align: justify; margin-top: 30px;">
+                    <p style="font-size: 12pt; line-height: 2.2; text-align: justify; margin-top: 25px;">
                         This is to certify that this is a bonafide record of work done by <strong>${student.name}</strong> 
-                        (Register Number: <strong>${student.regNo}</strong>) of <strong>BCA</strong> class, 
+                        (Register Number: <strong>${student.regNo}</strong>) of <strong>${getDegreeShort()}</strong> class, 
                         submitted for the End Semester Practical Examination held on ____________________ 
-                        in <strong>${current.code} – ${current.name}</strong> during the academic year <strong>2024 – 2025</strong>.
+                        in <strong>${courseInfo.code} – ${courseInfo.name}</strong> during the academic year <strong>2024 – 2025</strong>.
                     </p>
                     
-                    <div style="position: absolute; bottom: 35mm; left: 18mm; right: 18mm; display: flex; justify-content: space-between; text-align: center; font-weight: bold; font-size: 11pt;">
+                    <div style="margin-top: 130px; display: flex; justify-content: space-between; text-align: center; font-weight: bold; font-size: 11pt;">
                         <div><p style="border-top: 1px solid #000; padding-top: 5px; width: 140px;">Staff In-Charge</p></div>
                         <div><p style="border-top: 1px solid #000; padding-top: 5px; width: 140px;">Internal Examiner</p></div>
                         <div><p style="border-top: 1px solid #000; padding-top: 5px; width: 140px;">External Examiner</p></div>
                     </div>
                 </div>
 
-                <!-- PAGE 3: INDEX & STAFF EVALUATION SHEET -->
-                <div class="pdf-page">
-                    <h2 style="text-align: center; font-size: 13pt; font-weight: bold; margin-bottom: 15px;">
-                        ${current.name} – RECORD INDEX
+                <!-- PAGE 3: INDEX -->
+                <div class="page-break" style="padding: 10px 20px; font-family: 'Times New Roman', serif;">
+                    <h2 style="text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px;">
+                        ${courseInfo.name} – RECORD INDEX
                     </h2>
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 9.5pt;" border="1">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10pt;" border="1">
                         <thead>
                             <tr style="background: #f1f5f9;">
-                                <th style="padding: 7px; width: 8%;">S.NO</th>
-                                <th style="padding: 7px; width: 18%;">DATE</th>
-                                <th style="padding: 7px;">NAME OF THE EXPERIMENT</th>
-                                <th style="padding: 7px; width: 12%;">PAGE No.</th>
-                                <th style="padding: 7px; width: 20%;">SIGNATURE</th>
+                                <th style="padding: 8px; width: 8%;">S.NO</th>
+                                <th style="padding: 8px; width: 18%;">DATE</th>
+                                <th style="padding: 8px;">NAME OF THE EXPERIMENT</th>
+                                <th style="padding: 8px; width: 12%;">PAGE No.</th>
+                                <th style="padding: 8px; width: 20%;">SIGNATURE</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1243,11 +1113,11 @@
             savedRecords.forEach((rec, i) => {
                 html += `
                     <tr>
-                        <td style="padding: 7px; text-align: center;">${i + 1}</td>
-                        <td style="padding: 7px; text-align: center;">${rec.date}</td>
-                        <td style="padding: 7px;">${rec.title} [${rec.lang.toUpperCase()}]</td>
-                        <td style="padding: 7px; text-align: center;">${i + 4}</td>
-                        <td style="padding: 7px;"></td>
+                        <td style="padding: 8px; text-align: center;">${i + 1}</td>
+                        <td style="padding: 8px; text-align: center;">${rec.date}</td>
+                        <td style="padding: 8px;">${rec.title} [${rec.lang.toUpperCase()}]</td>
+                        <td style="padding: 8px; text-align: center;">${i + 5}</td>
+                        <td style="padding: 8px;"></td>
                     </tr>
                 `;
             });
@@ -1255,77 +1125,76 @@
             html += `
                         </tbody>
                     </table>
+                </div>
 
-                    <div style="margin-top: 40px;">
-                        <h2 style="text-align: center; font-size: 13pt; font-weight: bold; margin-bottom: 15px;">STAFF EVALUATION SHEET</h2>
-                        <table style="width: 100%; border-collapse: collapse; font-size: 9pt;" border="1">
-                            <thead>
-                                <tr style="background: #f1f5f9;">
-                                    <th style="padding: 6px;">S.NO</th>
-                                    <th style="padding: 6px;">PROGRAM TITLE</th>
-                                    <th style="padding: 6px;">AIM (2)</th>
-                                    <th style="padding: 6px;">ALGORITHM (2)</th>
-                                    <th style="padding: 6px;">PROGRAM (4)</th>
-                                    <th style="padding: 6px;">OUTPUT (2)</th>
-                                    <th style="padding: 6px;">TOTAL (10)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                <!-- PAGE 4: STAFF EVALUATION SHEET -->
+                <div class="page-break" style="padding: 10px 20px; font-family: 'Times New Roman', serif;">
+                    <h2 style="text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px;">STAFF EVALUATION SHEET</h2>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt;" border="1">
+                        <thead>
+                            <tr style="background: #f1f5f9;">
+                                <th style="padding: 6px;">S.NO</th>
+                                <th style="padding: 6px;">PROGRAM TITLE</th>
+                                <th style="padding: 6px;">AIM (2)</th>
+                                <th style="padding: 6px;">ALGORITHM (2)</th>
+                                <th style="padding: 6px;">PROGRAM (4)</th>
+                                <th style="padding: 6px;">OUTPUT (2)</th>
+                                <th style="padding: 6px;">TOTAL (10)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
             `;
 
             savedRecords.forEach((rec, i) => {
                 html += `
                     <tr>
-                        <td style="padding: 7px; text-align: center;">${i + 1}</td>
-                        <td style="padding: 7px;">${rec.title}</td>
-                        <td style="padding: 7px;"></td>
-                        <td style="padding: 7px;"></td>
-                        <td style="padding: 7px;"></td>
-                        <td style="padding: 7px;"></td>
-                        <td style="padding: 7px;"></td>
+                        <td style="padding: 8px; text-align: center;">${i + 1}</td>
+                        <td style="padding: 8px;">${rec.title}</td>
+                        <td style="padding: 8px;"></td>
+                        <td style="padding: 8px;"></td>
+                        <td style="padding: 8px;"></td>
+                        <td style="padding: 8px;"></td>
+                        <td style="padding: 8px;"></td>
                     </tr>
                 `;
             });
 
             html += `
-                            </tbody>
-                        </table>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
             `;
 
-            // PAGES 4+: INDIVIDUAL EXERCISES (STRICT 1 A4 PAGE PER EXPERIMENT)
+            // PAGES 5+: EXERCISES (WITH NATIVE SVG FLOWCHARTS)
             savedRecords.forEach((rec, i) => {
                 const autoProcedure = generateProcedureFromCode(rec.code, rec.lang);
-                const flowchartSvg = generateVectorFlowchartHtml(rec.code, rec.lang);
+                const flowchartSvg = generatePureSvgFlowchart(rec.code, rec.lang);
 
                 html += `
-                    <div class="pdf-page">
-                        <h3 style="font-size: 12.5pt; font-weight: bold; margin-bottom: 8px;">${i+1}. ${rec.title}</h3>
+                    <div class="page-break" style="padding: 10px 20px; font-family: 'Times New Roman', serif; position: relative;">
+                        <h3 style="font-size: 13pt; font-weight: bold;">${i+1}. ${rec.title}</h3>
                         
-                        <p style="font-weight: bold; font-size: 10pt; margin-top: 6px;">Aim:</p>
-                        <p style="font-size: 9.5pt; margin-bottom: 6px;">To design, develop and execute a program in ${rec.lang.toUpperCase()} to implement ${rec.title.toLowerCase()} and verify target output.</p>
+                        <p style="font-weight: bold; margin-top: 10px;">Aim:</p>
+                        <p style="margin-bottom: 8px;">To design, develop and execute a program in ${rec.lang.toUpperCase()} to implement ${rec.title.toLowerCase()} and verify target output.</p>
                         
-                        <p style="font-weight: bold; font-size: 10pt; margin-top: 6px;">Procedure / Algorithm:</p>
-                        <pre style="font-family: 'Times New Roman', serif; white-space: pre-wrap; font-size: 9pt; line-height: 1.4; margin-bottom: 6px;">${autoProcedure}</pre>
+                        <p style="font-weight: bold; margin-top: 10px;">Procedure / Algorithm:</p>
+                        <pre style="font-family: 'Times New Roman', serif; white-space: pre-wrap; font-size: 9.5pt; line-height: 1.45; margin-bottom: 8px; background: transparent !important; border: none; padding: 0;">${autoProcedure}</pre>
                         
-                        <p style="font-weight: bold; font-size: 10pt; margin-top: 6px;">${rec.lang === 'sql' ? 'Relational Schema Diagram:' : 'Flowchart:'}</p>
-                        <div style="border: 1px solid #000; padding: 6px; text-align: center; margin-bottom: 8px;">
+                        <p style="font-weight: bold; margin-top: 10px;">${rec.lang === 'sql' ? 'Relational Schema Diagram:' : 'Flowchart:'}</p>
+                        <div style="background: transparent !important; padding: 8px; border: 1px solid #000000; text-align: center; margin-bottom: 12px;">
                             ${flowchartSvg}
                         </div>
 
-                        <p style="font-weight: bold; font-size: 10pt; margin-top: 6px;">Program / Query Code:</p>
-                        <pre style="background: transparent; padding: 6px; font-size: 8.5pt; border: 1px solid #000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 6px; max-height: 120px; overflow: hidden;">${rec.code}</pre>
+                        <p style="font-weight: bold; margin-top: 10px;">Program / Query Code:</p>
+                        <pre style="background: transparent !important; padding: 8px; font-size: 9pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 8px; color: #000000;">${rec.code}</pre>
                         
-                        <p style="font-weight: bold; font-size: 10pt; margin-top: 6px;">Output:</p>
-                        <pre style="background: transparent; padding: 6px; font-size: 8.5pt; border: 1px solid #000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 6px; max-height: 80px; overflow: hidden;">${rec.output}</pre>
+                        <p style="font-weight: bold; margin-top: 10px;">Output:</p>
+                        <pre style="background: transparent !important; padding: 8px; font-size: 9pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 8px; color: #000000;">${rec.output}</pre>
                         
-                        <p style="font-weight: bold; font-size: 10pt; margin-top: 6px;">Result:</p>
-                        <p style="font-size: 9.5pt; margin-bottom: 25px;">Thus, the program was executed successfully and the output was verified.</p>
+                        <p style="font-weight: bold; margin-top: 10px;">Result:</p>
+                        <p style="margin-bottom: 25px;">Thus, the program was executed successfully and the output was verified.</p>
                         
-                        <div style="position: absolute; bottom: 8mm; left: 18mm; right: 18mm; text-align: center; font-size: 9pt; font-weight: bold; border-top: 1px solid #000; padding-top: 4px;">
-                            Student Name: ${student.name} | Register No: ${student.regNo} | Completed: ${rec.date}
-                        </div>
+                        <div class="record-footer">Student Name: ${student.name} | Register No: ${student.regNo} | Completed: ${rec.date}</div>
                     </div>
                 `;
             });
@@ -1340,25 +1209,25 @@
                 return;
             }
 
-            const current = getActiveCourse();
             const printDiv = document.getElementById('printableLabRecord');
             printDiv.innerHTML = `<div style="text-align:center; padding: 40px; font-family:sans-serif;"><h2>Generating Lab Record Document...</h2></div>`;
             printDiv.classList.remove('hidden');
 
-            const html = buildStrictPrintableDocumentHtml();
+            const html = await buildPrintableDocumentHtml();
             printDiv.innerHTML = html;
 
+            const element = document.getElementById('printableLabRecord');
             const opt = {
-                margin: 0, // Strict zero margin because .pdf-page has internal padding
-                filename: `${student.regNo}_${current.code}_LabRecord.pdf`,
+                margin: [10, 10, 10, 10],
+                filename: `${student.regNo}_${courseInfo.code}_${getDegreeShort()}_LabRecord.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true, logging: false },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                 pagebreak: { mode: ['css', 'legacy'] }
             };
 
-            html2pdf().set(opt).from(printDiv).save().then(() => {
-                printDiv.classList.add('hidden');
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.classList.add('hidden');
                 alert("Lab record PDF downloaded successfully!");
             });
         }
