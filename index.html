@@ -259,7 +259,6 @@
                     <h1 style="font-size: 17px; font-weight: 700;" id="stCourseHeading">BCA41001 - Programming Lab</h1>
                     <p style="font-size: 12px; color: #64748b;" id="stStudentIdentity">Logged in as: Student</p>
                 </div>
-                <!-- ONLY DOWNLOAD PDF OPTION -->
                 <div>
                     <button onclick="downloadDirectPDF()" class="btn btn-success" style="font-size: 13px; padding: 10px 18px;">
                         <i class="fa-solid fa-file-arrow-down"></i> Download PDF
@@ -347,7 +346,6 @@
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 120" width="100%" height="auto" style="display: block; margin: 0 auto;">
                     <!-- Orange Cogwheel Outer Teeth -->
                     <g transform="translate(60, 60)">
-                        <!-- 12 Cog Teeth -->
                         <rect x="-8" y="-56" width="16" height="112" rx="3" fill="#f97316"/>
                         <rect x="-8" y="-56" width="16" height="112" rx="3" fill="#f97316" transform="rotate(30)"/>
                         <rect x="-8" y="-56" width="16" height="112" rx="3" fill="#f97316" transform="rotate(60)"/>
@@ -355,24 +353,16 @@
                         <rect x="-8" y="-56" width="16" height="112" rx="3" fill="#f97316" transform="rotate(120)"/>
                         <rect x="-8" y="-56" width="16" height="112" rx="3" fill="#f97316" transform="rotate(150)"/>
 
-                        <!-- Cog Solid Ring -->
                         <circle cx="0" cy="0" r="48" fill="#f97316"/>
-                        
-                        <!-- Green Circular Band -->
                         <circle cx="0" cy="0" r="42" fill="#006837"/>
-                        
-                        <!-- Circular White Text -->
                         <circle cx="0" cy="0" r="41" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="3,3"/>
-                        
-                        <!-- Inner Orange Center Core -->
                         <circle cx="0" cy="0" r="27" fill="#f97316" stroke="#ffffff" stroke-width="1.5"/>
                         
-                        <!-- Silhouette Map of India & Torch Motif -->
                         <path d="M -7 -14 Q 0 -20 5 -12 Q 10 -4 6 4 Q 2 12 -4 14 Q -12 6 -7 -14 Z" fill="#ffffff" opacity="0.95"/>
                         <text x="0" y="21" font-family="'Arial', sans-serif" font-size="6.5" font-weight="900" fill="#ffffff" text-anchor="middle">ESTD. 1985</text>
                     </g>
 
-                    <!-- Official Typography (Exact match with user image) -->
+                    <!-- Official Typography -->
                     <text x="135" y="52" font-family="'Arial Black', Arial, sans-serif" font-size="44" font-weight="900" fill="#000000" letter-spacing="1">HINDUSTAN</text>
                     <text x="135" y="80" font-family="'Arial', sans-serif" font-size="15" font-weight="800" fill="#000000" letter-spacing="0.8">INSTITUTE OF TECHNOLOGY &amp; SCIENCE</text>
                     <text x="135" y="103" font-family="'Arial', sans-serif" font-size="14" font-weight="700" fill="#000000" letter-spacing="1.1">(DEEMED TO BE UNIVERSITY)</text>
@@ -747,7 +737,6 @@
                 currentPassed = true;
                 lastOutput = saved.output;
             } else {
-                // STARTS EMPTY SO STUDENTS WRITE CODE THEMSELVES
                 document.getElementById('codeEditorArea').value = "";
                 document.getElementById('terminalConsole').textContent = "Editor is empty. Write your solution code and click Run Program.";
                 document.getElementById('compilerStatusPill').textContent = "NOT EVALUATED";
@@ -1202,4 +1191,46 @@
                         <p style="font-weight: bold; margin-top: 8px; font-size: 10.5pt;">Output:</p>
                         <pre style="background: transparent !important; padding: 6px; font-size: 8.5pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 6px; max-height: 70px; overflow: hidden; color: #000000;">${rec.output}</pre>
                         
-                        <p
+                        <p style="font-weight: bold; margin-top: 8px; font-size: 10.5pt;">Result:</p>
+                        <p style="margin-bottom: 20px; font-size: 10pt;">Thus, the program was executed successfully and the output was verified.</p>
+                        
+                        <div class="record-footer">Student Name: ${student.name} | Register No: ${student.regNo} | Completed: ${rec.date}</div>
+                    </div>
+                `;
+            });
+
+            return html;
+        }
+
+        // ==================== DIRECT PDF DOWNLOAD ====================
+        async function downloadDirectPDF() {
+            if (savedRecords.length === 0) {
+                alert("Please save at least one completed program to your record before downloading!");
+                return;
+            }
+
+            const printDiv = document.getElementById('printableLabRecord');
+            printDiv.innerHTML = `<div style="text-align:center; padding: 40px; font-family:sans-serif;"><h2>Generating Lab Record Document...</h2></div>`;
+            printDiv.classList.remove('hidden');
+
+            const html = await buildPrintableDocumentHtml();
+            printDiv.innerHTML = html;
+
+            const element = document.getElementById('printableLabRecord');
+            const opt = {
+                margin: [10, 10, 10, 10],
+                filename: `${student.regNo}_${courseInfo.code}_${getDegreeShort()}_LabRecord.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, logging: false },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['css', 'legacy'] }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.classList.add('hidden');
+                alert("Lab record PDF downloaded successfully!");
+            });
+        }
+    </script>
+</body>
+</html>
