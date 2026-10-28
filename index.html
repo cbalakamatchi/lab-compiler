@@ -61,13 +61,17 @@
         .gap-4 { gap: 16px; }
         .grid { display: grid; }
         .grid-2 { grid-template-columns: 1fr 1fr; }
-        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1.2fr 1fr 1fr; }
         .grid-admin { grid-template-columns: 1.15fr 1fr; gap: 20px; }
 
         .badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; }
         .badge-blue { background: #dbeafe; color: #1e40af; }
         .badge-green { background: #d1fae5; color: #065f46; }
         .badge-gray { background: #f1f5f9; color: #475569; }
+
+        /* MODAL STYLING */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 15px; }
+        .modal-content { background: #fff; border-radius: 12px; max-width: 480px; width: 100%; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
 
         /* STRICT PDF PRINT MEDIA CSS */
         @media print {
@@ -93,13 +97,13 @@
                     <span style="background: #3b82f6; width: 10px; height: 10px; border-radius: 50%;"></span>
                     <h1 style="font-size: 20px; font-weight: 700;">HITS Faculty Administration</h1>
                 </div>
-                <p style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Select Degree (BCA / MCA), configure course details, parse programs line-by-line, and share link.</p>
+                <p style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Add courses (BCA/MCA), upload/parse programs line-by-line, and deploy student practice links.</p>
             </div>
             <div class="flex gap-2">
-                <button onclick="generateAndCopyStudentLink()" class="btn btn-primary" style="background: #10b981;">
+                <button type="button" onclick="generateAndCopyStudentLink()" class="btn btn-primary" style="background: #10b981;">
                     <i class="fa-solid fa-link"></i> Generate Student Link
                 </button>
-                <button onclick="exportStudentLogsExcel()" class="btn btn-secondary">
+                <button type="button" onclick="exportStudentLogsExcel()" class="btn btn-secondary">
                     <i class="fa-solid fa-file-excel"></i> Export Logs
                 </button>
             </div>
@@ -112,33 +116,51 @@
             </p>
             <div class="flex gap-2">
                 <input type="text" id="generatedStudentUrlInput" readonly class="font-mono" style="font-size: 12px; background: #fff;">
-                <button onclick="copyGeneratedUrl()" class="btn btn-primary" style="background: #059669; white-space: nowrap;">
+                <button type="button" onclick="copyGeneratedUrl()" class="btn btn-primary" style="background: #059669; white-space: nowrap;">
                     <i class="fa-solid fa-copy"></i> Copy Link
                 </button>
             </div>
         </div>
 
-        <!-- COURSE INFORMATION (WITH BCA / MCA SELECTOR) -->
+        <!-- COURSE MANAGEMENT & ADD COURSE CARD -->
         <div class="pro-card">
-            <h2 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #1e293b;">
-                <i class="fa-solid fa-book-bookmark" style="color: var(--primary);"></i> Course & Degree Information
-            </h2>
+            <div class="flex justify-between items-center" style="margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                <h2 style="font-size: 15px; font-weight: 700; color: #1e293b;">
+                    <i class="fa-solid fa-graduation-cap" style="color: var(--primary);"></i> Course Management
+                </h2>
+                <div class="flex gap-2">
+                    <button type="button" onclick="openAddCourseModal()" class="btn btn-primary" style="font-size: 12px; padding: 7px 14px;">
+                        <i class="fa-solid fa-plus"></i> Add New Course
+                    </button>
+                    <button type="button" onclick="deleteActiveCourse()" class="btn btn-danger" style="font-size: 12px; padding: 7px 12px;">
+                        <i class="fa-solid fa-trash"></i> Delete Course
+                    </button>
+                </div>
+            </div>
+
+            <!-- Active Course Selector & Details -->
             <div class="grid grid-3 gap-3">
                 <div>
-                    <label>Degree Program *</label>
-                    <select id="degreeSelect" onchange="syncCourseInfo()">
+                    <label>Select Active Course *</label>
+                    <select id="courseSelectDropdown" onchange="switchActiveCourse()">
+                        <!-- Dynamically populated -->
+                    </select>
+                </div>
+                <div>
+                    <label>Degree Program (for Active Course)</label>
+                    <select id="activeDegreeSelect" onchange="updateActiveCourseDetails()">
                         <option value="BCA">BCA (Bachelor of Computer Applications)</option>
                         <option value="MCA">MCA (Master of Computer Applications)</option>
                     </select>
                 </div>
                 <div>
-                    <label>Course Code *</label>
-                    <input type="text" id="courseCodeInput" value="BCA41001" placeholder="e.g. BCA41001 or MCA21001" onchange="syncCourseInfo()">
+                    <label>Course Code</label>
+                    <input type="text" id="activeCourseCodeInput" onchange="updateActiveCourseDetails()" placeholder="e.g. BCA41001">
                 </div>
-                <div>
-                    <label>Course Name *</label>
-                    <input type="text" id="courseNameInput" value="PROBLEM SOLVING & PROGRAMMING LABORATORY" placeholder="e.g. ADVANCED JAVA LAB" onchange="syncCourseInfo()">
-                </div>
+            </div>
+            <div style="margin-top: 10px;">
+                <label>Course Name</label>
+                <input type="text" id="activeCourseNameInput" onchange="updateActiveCourseDetails()" placeholder="e.g. PROBLEM SOLVING &amp; PROGRAMMING LABORATORY">
             </div>
         </div>
 
@@ -159,8 +181,8 @@
 
                 <div style="margin-top: 15px;">
                     <label>Or Paste Program Syllabus List (Line-by-Line):</label>
-                    <textarea id="documentTextArea" style="height: 120px; font-size: 12px; line-height: 1.5;" placeholder="1. Write a program to find factorial of a given number&#10;2. Write a program to check prime or not&#10;3. Create table Student and insert three records"></textarea>
-                    <button onclick="parseTextLineByLine()" class="btn btn-secondary" style="width: 100%; margin-top: 8px;">
+                    <textarea id="documentTextArea" style="height: 110px; font-size: 12px; line-height: 1.5;" placeholder="1. Write a program to find factorial of a given number&#10;2. Write a program to check prime or not&#10;3. Create table Student and insert three records"></textarea>
+                    <button type="button" onclick="parseTextLineByLine()" class="btn btn-secondary" style="width: 100%; margin-top: 8px;">
                         <i class="fa-solid fa-wand-magic-sparkles"></i> Parse Programs Line-by-Line
                     </button>
                 </div>
@@ -179,7 +201,7 @@
                             </select>
                             <input type="text" id="manualTarget" placeholder="Expected Target Output (optional)">
                         </div>
-                        <button onclick="addSingleProgramManual()" class="btn btn-primary" style="font-size: 12px;">
+                        <button type="button" onclick="addSingleProgramManual()" class="btn btn-primary" style="font-size: 12px;">
                             <i class="fa-solid fa-plus"></i> Add Program
                         </button>
                     </div>
@@ -192,18 +214,49 @@
                     <div class="flex justify-between items-center" style="margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
                         <div>
                             <h2 style="font-size: 15px; font-weight: 700; color: #1e293b;">Uploaded Program List</h2>
-                            <span style="font-size: 11px; color: #64748b;">These programs will appear in the student workspace</span>
+                            <span id="activeCourseSubtext" style="font-size: 11px; color: #64748b;">Programs for active course</span>
                         </div>
                         <div class="flex gap-2 items-center">
                             <span id="programCountBadge" class="badge badge-blue">0 Programs</span>
-                            <button onclick="clearAllPrograms()" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;"><i class="fa-solid fa-trash"></i></button>
+                            <button type="button" onclick="clearAllPrograms()" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
-                    <div id="adminProgramList" style="max-height: 420px; overflow-y: auto;" class="flex flex-col gap-2"></div>
+                    <div id="adminProgramList" style="max-height: 440px; overflow-y: auto;" class="flex flex-col gap-2"></div>
                 </div>
 
                 <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 12px;">
                     <p style="font-size: 11px; color: #64748b;"><i class="fa-solid fa-shield-halved"></i> <strong>Validation Guard:</strong> Register Numbers with prefix <strong>26SU</strong> or <strong>26SP</strong> or university emails.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: ADD NEW COURSE ==================== -->
+    <div id="addCourseModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center" style="margin-bottom: 15px;">
+                <h3 style="font-size: 16px; font-weight: 700;"><i class="fa-solid fa-folder-plus" style="color: var(--primary);"></i> Add New Course</h3>
+                <button type="button" onclick="closeAddCourseModal()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #64748b;">&times;</button>
+            </div>
+            <div class="flex flex-col gap-3">
+                <div>
+                    <label>Degree Program *</label>
+                    <select id="newCourseDegree">
+                        <option value="BCA">BCA (Bachelor of Computer Applications)</option>
+                        <option value="MCA">MCA (Master of Computer Applications)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Course Code *</label>
+                    <input type="text" id="newCourseCode" placeholder="e.g. BCA41002 or MCA21005">
+                </div>
+                <div>
+                    <label>Course Name *</label>
+                    <input type="text" id="newCourseName" placeholder="e.g. DATA STRUCTURES &amp; ALGORITHMS LAB">
+                </div>
+                <div class="flex justify-between items-center" style="margin-top: 10px;">
+                    <button type="button" onclick="closeAddCourseModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="button" onclick="saveNewCourse()" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save Course</button>
                 </div>
             </div>
         </div>
@@ -259,8 +312,9 @@
                     <h1 style="font-size: 17px; font-weight: 700;" id="stCourseHeading">BCA41001 - Programming Lab</h1>
                     <p style="font-size: 12px; color: #64748b;" id="stStudentIdentity">Logged in as: Student</p>
                 </div>
+                <!-- ONLY DOWNLOAD PDF OPTION -->
                 <div>
-                    <button onclick="downloadDirectPDF()" class="btn btn-success" style="font-size: 13px; padding: 10px 18px;">
+                    <button type="button" onclick="downloadDirectPDF()" class="btn btn-success" style="font-size: 13px; padding: 10px 18px;">
                         <i class="fa-solid fa-file-arrow-down"></i> Download PDF
                     </button>
                 </div>
@@ -293,7 +347,7 @@
                                 <option value="python">Python 3</option>
                                 <option value="sql">SQL (SQLite)</option>
                             </select>
-                            <button id="runCodeBtn" onclick="executeStudentCode()" class="btn" style="background: #10b981; color: #fff; font-size: 12px; padding: 6px 14px;">
+                            <button id="runCodeBtn" type="button" onclick="executeStudentCode()" class="btn" style="background: #10b981; color: #fff; font-size: 12px; padding: 6px 14px;">
                                 <i class="fa-solid fa-play"></i> Run Program
                             </button>
                         </div>
@@ -323,10 +377,10 @@
 
                     <!-- Bottom Bar -->
                     <div class="flex justify-between items-center" style="margin-top: 4px;">
-                        <button onclick="clearEditor()" class="btn btn-secondary" style="background: #1e293b; color: #cbd5e1; border-color: #334155; font-size: 11px; padding: 6px 10px;">
+                        <button type="button" onclick="clearEditor()" class="btn btn-secondary" style="background: #1e293b; color: #cbd5e1; border-color: #334155; font-size: 11px; padding: 6px 10px;">
                             <i class="fa-solid fa-eraser"></i> Clear Editor
                         </button>
-                        <button onclick="saveActiveRecord()" class="btn btn-primary" style="background: #3b82f6; font-size: 12px;">
+                        <button type="button" onclick="saveActiveRecord()" class="btn btn-primary" style="background: #3b82f6; font-size: 12px;">
                             <i class="fa-solid fa-circle-check"></i> Save to Lab Record
                         </button>
                     </div>
@@ -339,7 +393,63 @@
     <div id="printableLabRecord" class="hidden"></div>
 
     <script>
-        // OFFICIAL HINDUSTAN UNIVERSITY LOGO (EXACT VECTOR EMBLEM MATCHING UPLOADED IMAGE, FIT PROPORTIONALLY)
+        // ==================== ROBUST COMPRESSION & CLIPBOARD HELPERS ====================
+        function safeCompress(dataObj) {
+            const jsonStr = JSON.stringify(dataObj);
+            if (window.LZString && typeof LZString.compressToEncodedURIComponent === 'function') {
+                try {
+                    return "LZ:" + LZString.compressToEncodedURIComponent(jsonStr);
+                } catch(e) {}
+            }
+            return "B64:" + btoa(unescape(encodeURIComponent(jsonStr)));
+        }
+
+        function safeDecompress(rawStr) {
+            if (!rawStr) return null;
+            try {
+                if (rawStr.startsWith("LZ:") && window.LZString) {
+                    const decomp = LZString.decompressFromEncodedURIComponent(rawStr.substring(3));
+                    if (decomp) return JSON.parse(decomp);
+                }
+                if (rawStr.startsWith("B64:")) {
+                    return JSON.parse(decodeURIComponent(escape(atob(rawStr.substring(4)))));
+                }
+                if (window.LZString) {
+                    const decomp = LZString.decompressFromEncodedURIComponent(rawStr);
+                    if (decomp) return JSON.parse(decomp);
+                }
+                return JSON.parse(decodeURIComponent(escape(atob(rawStr))));
+            } catch(e) {
+                console.warn("Decompression failed:", e);
+                return null;
+            }
+        }
+
+        function copyTextToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+            }
+            document.body.removeChild(ta);
+        }
+
+        // ==================== OFFICIAL HINDUSTAN UNIVERSITY LOGO ====================
         function getCollegeLogoHtml() {
             return `
             <div style="text-align: center; margin: 0 auto; width: 100%; max-width: 250px;">
@@ -371,72 +481,84 @@
             `;
         }
 
-        // APPLICATION STATE
-        let courseInfo = {
-            code: "BCA41001",
-            name: "PROBLEM SOLVING & PROGRAMMING LABORATORY",
-            degree: "BCA" // "BCA" or "MCA"
-        };
-
-        let coursePrograms = [
+        // ==================== STATE WITH MULTI-COURSE MANAGEMENT ====================
+        let coursesList = [
             {
-                title: "Read an integer and display it",
-                lang: "c",
-                code: "",
-                sampleInput: "42",
-                expectedOutput: "42"
+                code: "BCA41001",
+                name: "PROBLEM SOLVING & PROGRAMMING LABORATORY",
+                degree: "BCA",
+                programs: [
+                    {
+                        title: "Read an integer and display it",
+                        lang: "c",
+                        code: "",
+                        sampleInput: "42",
+                        expectedOutput: "42"
+                    },
+                    {
+                        title: "Create Student Table and Query Tuples",
+                        lang: "sql",
+                        code: "",
+                        sampleInput: "",
+                        expectedOutput: "Aravind"
+                    }
+                ]
             },
             {
-                title: "Create Student Table and Query Tuples",
-                lang: "sql",
-                code: "",
-                sampleInput: "",
-                expectedOutput: "Aravind"
+                code: "MCA21001",
+                name: "ADVANCED DATABASE MANAGEMENT SYSTEMS LAB",
+                degree: "MCA",
+                programs: [
+                    {
+                        title: "Relational Join and Projection Operations",
+                        lang: "sql",
+                        code: "",
+                        sampleInput: "",
+                        expectedOutput: "Completed"
+                    }
+                ]
             }
         ];
 
+        let activeCourseIndex = 0;
+        let studentCourseData = null; // Used when student loads via shared link
         let student = null;
         let activeIdx = 0;
         let savedRecords = [];
         let currentPassed = false;
         let lastOutput = "";
 
-        // HELPER FUNCTIONS FOR DYNAMIC BCA/MCA DISPLAY
+        function getActiveCourse() {
+            if (studentCourseData) return studentCourseData;
+            if (!coursesList[activeCourseIndex]) activeCourseIndex = 0;
+            return coursesList[activeCourseIndex];
+        }
+
         function getDegreeFullTitle() {
-            return (courseInfo.degree === 'MCA') ? "MASTER OF COMPUTER APPLICATIONS" : "BACHELOR OF COMPUTER APPLICATIONS";
+            const c = getActiveCourse();
+            return (c && c.degree === 'MCA') ? "MASTER OF COMPUTER APPLICATIONS" : "BACHELOR OF COMPUTER APPLICATIONS";
         }
 
         function getDegreeShort() {
-            return (courseInfo.degree === 'MCA') ? "MCA" : "BCA";
+            const c = getActiveCourse();
+            return (c && c.degree === 'MCA') ? "MCA" : "BCA";
         }
 
-        // TAB INDENTATION SUPPORT IN EDITOR
-        document.getElementById('codeEditorArea').addEventListener('keydown', function(e) {
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                const start = this.selectionStart;
-                const end = this.selectionEnd;
-                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
-                this.selectionStart = this.selectionEnd = start + 4;
-            }
-        });
-
-        // PAGE LOAD - URL PARSER (COMPRESSED LZ-STRING)
+        // ==================== PAGE LOAD & DATA SYNC ====================
         window.onload = function() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const dataParam = urlParams.get('data');
                 if (dataParam) {
-                    let decodedStr = "";
-                    if (window.LZString) decodedStr = LZString.decompressFromEncodedURIComponent(dataParam);
-                    if (!decodedStr) {
-                        try { decodedStr = decodeURIComponent(escape(atob(dataParam))); } catch(e){}
-                    }
-                    if (decodedStr) {
-                        const parsed = JSON.parse(decodedStr);
-                        if (parsed.p) coursePrograms = parsed.p;
-                        if (parsed.ci) courseInfo = parsed.ci;
-                        
+                    const parsed = safeDecompress(dataParam);
+                    if (parsed) {
+                        studentCourseData = {
+                            code: (parsed.ci && parsed.ci.code) || "BCA41001",
+                            name: (parsed.ci && parsed.ci.name) || "PRACTICAL LAB",
+                            degree: (parsed.ci && parsed.ci.degree) || "BCA",
+                            programs: parsed.p || []
+                        };
+
                         document.getElementById('adminPortalView').classList.add('hidden');
                         document.getElementById('studentPortalView').classList.remove('hidden');
                         return;
@@ -448,16 +570,100 @@
 
             document.getElementById('adminPortalView').classList.remove('hidden');
             document.getElementById('studentPortalView').classList.add('hidden');
+            renderCourseDropdown();
+            renderActiveCourseForm();
             renderAdminProgramList();
         };
 
-        function syncCourseInfo() {
-            courseInfo.degree = document.getElementById('degreeSelect').value || "BCA";
-            courseInfo.code = document.getElementById('courseCodeInput').value.trim() || (courseInfo.degree === 'MCA' ? "MCA21001" : "BCA41001");
-            courseInfo.name = document.getElementById('courseNameInput').value.trim() || "PROGRAMMING LABORATORY";
+        // ==================== COURSE MANAGEMENT FUNCTIONS ====================
+        function renderCourseDropdown() {
+            const select = document.getElementById('courseSelectDropdown');
+            select.innerHTML = "";
+            coursesList.forEach((c, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = `[${c.degree}] ${c.code} - ${c.name}`;
+                if (idx === activeCourseIndex) opt.selected = true;
+                select.appendChild(opt);
+            });
         }
 
-        // ==================== DOCUMENT & LINE-BY-LINE PARSER ====================
+        function switchActiveCourse() {
+            const select = document.getElementById('courseSelectDropdown');
+            activeCourseIndex = parseInt(select.value, 10) || 0;
+            renderActiveCourseForm();
+            renderAdminProgramList();
+        }
+
+        function renderActiveCourseForm() {
+            const c = getActiveCourse();
+            if (!c) return;
+            document.getElementById('activeDegreeSelect').value = c.degree || "BCA";
+            document.getElementById('activeCourseCodeInput').value = c.code || "";
+            document.getElementById('activeCourseNameInput').value = c.name || "";
+            document.getElementById('activeCourseSubtext').textContent = `Programs for: [${c.degree}] ${c.code}`;
+        }
+
+        function updateActiveCourseDetails() {
+            const c = getActiveCourse();
+            if (!c) return;
+            c.degree = document.getElementById('activeDegreeSelect').value || "BCA";
+            c.code = document.getElementById('activeCourseCodeInput').value.trim() || "COURSE01";
+            c.name = document.getElementById('activeCourseNameInput').value.trim() || "PRACTICAL LAB";
+            renderCourseDropdown();
+        }
+
+        function openAddCourseModal() {
+            document.getElementById('newCourseCode').value = "";
+            document.getElementById('newCourseName').value = "";
+            document.getElementById('addCourseModal').classList.remove('hidden');
+        }
+
+        function closeAddCourseModal() {
+            document.getElementById('addCourseModal').classList.add('hidden');
+        }
+
+        function saveNewCourse() {
+            const degree = document.getElementById('newCourseDegree').value;
+            const code = document.getElementById('newCourseCode').value.trim();
+            const name = document.getElementById('newCourseName').value.trim();
+
+            if (!code || !name) {
+                alert("Please enter both Course Code and Course Name!");
+                return;
+            }
+
+            coursesList.push({
+                code: code,
+                name: name,
+                degree: degree,
+                programs: []
+            });
+
+            activeCourseIndex = coursesList.length - 1;
+            closeAddCourseModal();
+            renderCourseDropdown();
+            renderActiveCourseForm();
+            renderAdminProgramList();
+            alert(`Course "${code} - ${name}" added successfully! Now add programs to this course.`);
+        }
+
+        function deleteActiveCourse() {
+            if (coursesList.length <= 1) {
+                alert("You must have at least one course.");
+                return;
+            }
+            const c = getActiveCourse();
+            if (confirm(`Are you sure you want to delete course "${c.code} - ${c.name}"?`)) {
+                coursesList.splice(activeCourseIndex, 1);
+                activeCourseIndex = 0;
+                renderCourseDropdown();
+                renderActiveCourseForm();
+                renderAdminProgramList();
+            }
+        }
+
+        // ==================== DOCUMENT & PROGRAM UPLOADER ====================
         function triggerDocUpload() {
             document.getElementById('docFileInput').click();
         }
@@ -466,6 +672,7 @@
             const file = e.target.files[0];
             if (!file) return;
 
+            const c = getActiveCourse();
             const ext = file.name.split('.').pop().toLowerCase();
 
             if (ext === 'docx') {
@@ -481,8 +688,8 @@
                 reader.onload = function(evt) {
                     try {
                         const parsed = JSON.parse(evt.target.result);
-                        if (Array.isArray(parsed)) coursePrograms = parsed;
-                        else if (parsed.programs) coursePrograms = parsed.programs;
+                        if (Array.isArray(parsed)) c.programs = parsed;
+                        else if (parsed.programs) c.programs = parsed.programs;
                         renderAdminProgramList();
                     } catch(err) { alert("Invalid JSON: " + err.message); }
                 };
@@ -495,7 +702,7 @@
                         processLineByLineText(text);
                     } else {
                         const langMap = { 'c':'c', 'cpp':'cpp', 'java':'java', 'py':'python', 'sql':'sql' };
-                        coursePrograms.push({
+                        c.programs.push({
                             title: file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
                             lang: langMap[ext] || "c",
                             code: "",
@@ -507,6 +714,7 @@
                 };
                 reader.readAsText(file);
             }
+            e.target.value = "";
         }
 
         function parseTextLineByLine() {
@@ -520,6 +728,7 @@
         }
 
         function processLineByLineText(rawText) {
+            const c = getActiveCourse();
             const lines = rawText.split(/\r?\n/);
             let addedCount = 0;
 
@@ -529,7 +738,7 @@
 
                 line = line.replace(/^(?:ex(?:p)?\s*\d+|experiment\s*\d+|\d+)[\.\)\:\-]\s*/i, "").trim();
 
-                if (line.length < 5 || /^(page\s*\d+|syllabus|contents|index|table of contents)$/i.test(line)) return;
+                if (line.length < 4 || /^(page\s*\d+|syllabus|contents|index|table of contents)$/i.test(line)) return;
 
                 let detectedLang = "c";
                 if (/\b(sql|table|database|query|insert|select|dml|ddl)\b/i.test(line)) detectedLang = "sql";
@@ -537,7 +746,7 @@
                 else if (/\b(java|class |jvm)\b/i.test(line)) detectedLang = "java";
                 else if (/\b(c\+\+|cpp|cout)\b/i.test(line)) detectedLang = "cpp";
 
-                coursePrograms.push({
+                c.programs.push({
                     title: line,
                     lang: detectedLang,
                     code: "",
@@ -548,36 +757,53 @@
             });
 
             renderAdminProgramList();
-            alert(`Parsed ${addedCount} programs successfully from document!`);
+            alert(`Parsed ${addedCount} programs successfully for course [${c.code}]!`);
         }
 
         function addSingleProgramManual() {
-            const title = document.getElementById('manualTitle').value.trim();
-            const lang = document.getElementById('manualLang').value;
-            const target = document.getElementById('manualTarget').value.trim();
+            const titleInput = document.getElementById('manualTitle');
+            const targetInput = document.getElementById('manualTarget');
+            const langSelect = document.getElementById('manualLang');
+
+            const title = titleInput.value.trim();
+            const lang = langSelect.value;
+            const target = targetInput.value.trim();
 
             if (!title) {
-                alert("Please specify a program title!");
+                alert("Please enter a Program Title!");
+                titleInput.focus();
                 return;
             }
 
-            coursePrograms.push({
-                title,
-                lang,
+            const c = getActiveCourse();
+            c.programs.push({
+                title: title,
+                lang: lang,
                 code: "",
                 sampleInput: "",
                 expectedOutput: target
             });
 
-            document.getElementById('manualTitle').value = "";
-            document.getElementById('manualTarget').value = "";
+            titleInput.value = "";
+            targetInput.value = "";
             renderAdminProgramList();
+            alert(`Program "${title}" added successfully!`);
         }
 
         function renderAdminProgramList() {
+            const c = getActiveCourse();
             const container = document.getElementById('adminProgramList');
             container.innerHTML = "";
-            coursePrograms.forEach((p, idx) => {
+            
+            const count = (c && c.programs) ? c.programs.length : 0;
+            document.getElementById('programCountBadge').textContent = `${count} Programs`;
+
+            if (count === 0) {
+                container.innerHTML = `<p style="font-size:12px; color:#64748b; padding:10px; text-align:center;">No programs added to this course yet. Use the upload box or manual form to add programs.</p>`;
+                return;
+            }
+
+            c.programs.forEach((p, idx) => {
                 container.innerHTML += `
                     <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
                         <div>
@@ -585,61 +811,71 @@
                             <span class="badge badge-gray" style="margin-left: 6px;">${p.lang.toUpperCase()}</span>
                             <br><span style="font-size: 11px; color: #64748b;">Target: "${p.expectedOutput || 'Any valid execution'}"</span>
                         </div>
-                        <button onclick="removeProgram(${idx})" class="btn btn-danger" style="padding: 2px 7px; font-size: 11px;"><i class="fa-solid fa-xmark"></i></button>
+                        <button type="button" onclick="removeProgram(${idx})" class="btn btn-danger" style="padding: 2px 7px; font-size: 11px;"><i class="fa-solid fa-xmark"></i></button>
                     </div>`;
             });
-            document.getElementById('programCountBadge').textContent = `${coursePrograms.length} Programs`;
         }
 
         function removeProgram(idx) {
-            coursePrograms.splice(idx, 1);
-            renderAdminProgramList();
+            const c = getActiveCourse();
+            if (c && c.programs) {
+                c.programs.splice(idx, 1);
+                renderAdminProgramList();
+            }
         }
 
         function clearAllPrograms() {
-            if (confirm("Clear all programs in this course?")) {
-                coursePrograms = [];
+            const c = getActiveCourse();
+            if (c && confirm(`Clear all programs for course "${c.code}"?`)) {
+                c.programs = [];
                 renderAdminProgramList();
             }
         }
 
         // ==================== GENERATE COMPACT PRACTICE LINK ====================
         function generateAndCopyStudentLink() {
-            syncCourseInfo();
+            updateActiveCourseDetails();
+            const c = getActiveCourse();
+
+            if (!c.programs || c.programs.length === 0) {
+                alert("Please add at least one program to the active course before generating a link!");
+                return;
+            }
+
             const payload = {
-                ci: courseInfo,
-                p: coursePrograms
+                ci: {
+                    code: c.code,
+                    name: c.name,
+                    degree: c.degree
+                },
+                p: c.programs
             };
 
-            const jsonStr = JSON.stringify(payload);
-            const compressed = LZString.compressToEncodedURIComponent(jsonStr);
-            const url = `${window.location.origin}${window.location.pathname}?data=${compressed}`;
+            const compressed = safeCompress(payload);
+            const baseUrl = window.location.href.split('?')[0];
+            const url = `${baseUrl}?data=${compressed}`;
 
-            document.getElementById('generatedStudentUrlInput').value = url;
+            const urlInput = document.getElementById('generatedStudentUrlInput');
+            urlInput.value = url;
             document.getElementById('generatedLinkBanner').classList.remove('hidden');
 
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(url).then(() => {
-                    alert("Student Practice link copied to clipboard!");
-                }).catch(() => {
-                    alert("Practice link ready in top banner!");
-                });
-            }
+            copyTextToClipboard(url);
+            alert("Student Practice Link generated and copied to clipboard! Share this URL with your students.");
         }
 
         function copyGeneratedUrl() {
             const input = document.getElementById('generatedStudentUrlInput');
-            input.select();
-            document.execCommand('copy');
+            copyTextToClipboard(input.value);
             alert("Copied to clipboard!");
         }
 
         function exportStudentLogsExcel() {
+            const c = getActiveCourse();
             const logs = JSON.parse(localStorage.getItem('hits_lab_logs') || '[]');
             const ws = XLSX.utils.json_to_sheet(logs);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Logs");
-            XLSX.writeFile(wb, `${courseInfo.code}_Student_Logs.xlsx`);
+            XLSX.writeFile(wb, `${c.code}_Student_Logs.xlsx`);
         }
 
         // ==================== STUDENT WORKSPACE & RUNNER ====================
@@ -668,7 +904,8 @@
                 rollNo: document.getElementById('sRollNo').value.trim()
             };
 
-            const localKey = `hits_saved_${courseInfo.code}_${student.regNo}`;
+            const c = getActiveCourse();
+            const localKey = `hits_saved_${c.code}_${student.regNo}`;
             const cached = localStorage.getItem(localKey);
             if (cached) {
                 try { savedRecords = JSON.parse(cached); } catch(err){ savedRecords = []; }
@@ -682,7 +919,7 @@
 
             document.getElementById('studentAuthModal').classList.add('hidden');
             document.getElementById('studentMainContent').classList.remove('hidden');
-            document.getElementById('stCourseHeading').textContent = `${courseInfo.code} - ${courseInfo.name} (${getDegreeShort()})`;
+            document.getElementById('stCourseHeading').textContent = `${c.code} - ${c.name} (${getDegreeShort()})`;
             document.getElementById('stStudentIdentity').textContent = `Logged in as: ${student.name} (${student.regNo})`;
 
             renderStudentExerciseList();
@@ -690,19 +927,20 @@
         }
 
         function renderStudentExerciseList() {
+            const c = getActiveCourse();
             const container = document.getElementById('studentExerciseList');
             container.innerHTML = "";
-            document.getElementById('stExerciseBadge').textContent = `${coursePrograms.length} Items`;
+            document.getElementById('stExerciseBadge').textContent = `${c.programs.length} Items`;
 
-            if (coursePrograms.length === 0) {
+            if (c.programs.length === 0) {
                 container.innerHTML = `<p style="font-size:12px; color:#64748b;">No exercises available.</p>`;
                 return;
             }
 
-            coursePrograms.forEach((p, i) => {
+            c.programs.forEach((p, i) => {
                 const saved = savedRecords.find(r => r.title === p.title);
                 container.innerHTML += `
-                    <button onclick="selectStudentExercise(${i})" class="btn btn-secondary" style="width: 100%; text-align: left; justify-content: space-between; font-size: 12px; padding: 9px; background: ${i === activeIdx ? '#eff6ff' : '#fff'}; border-color: ${i === activeIdx ? 'var(--primary)' : 'var(--border-color)'};">
+                    <button type="button" onclick="selectStudentExercise(${i})" class="btn btn-secondary" style="width: 100%; text-align: left; justify-content: space-between; font-size: 12px; padding: 9px; background: ${i === activeIdx ? '#eff6ff' : '#fff'}; border-color: ${i === activeIdx ? 'var(--primary)' : 'var(--border-color)'};">
                         <div style="max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                             <strong>${i + 1}. ${p.title}</strong>
                             ${saved ? `<br><span style="color:#059669; font-size:10px;"><i class="fa-solid fa-circle-check"></i> Completed (${saved.date})</span>` : ''}
@@ -720,7 +958,8 @@
         }
 
         function loadActiveStudentExercise() {
-            const p = coursePrograms[activeIdx];
+            const c = getActiveCourse();
+            const p = c.programs[activeIdx];
             if (!p) return;
 
             document.getElementById('activeExTitle').textContent = `${activeIdx + 1}. ${p.title}`;
@@ -748,7 +987,8 @@
 
         function switchProgramLang() {
             const sel = document.getElementById('codeLangSelect').value;
-            const p = coursePrograms[activeIdx];
+            const c = getActiveCourse();
+            const p = c.programs[activeIdx];
             if (p) {
                 p.lang = sel;
                 document.getElementById('activeLangTag').textContent = sel.toUpperCase();
@@ -766,7 +1006,8 @@
         // ==================== DUAL-ENGINE COMPILER RUNNER ====================
         async function executeStudentCode() {
             const code = document.getElementById('codeEditorArea').value.trim();
-            const p = coursePrograms[activeIdx];
+            const c = getActiveCourse();
+            const p = c.programs[activeIdx];
             const consoleBox = document.getElementById('terminalConsole');
             const statusPill = document.getElementById('compilerStatusPill');
             const runBtn = document.getElementById('runCodeBtn');
@@ -868,7 +1109,6 @@
             }
         }
 
-        // BROWSER CLIENT-SIDE SIMULATOR
         function runLocalSimulation(lang, code, stdin) {
             if (lang === 'sql') {
                 const lines = code.split(';').map(l => l.trim()).filter(Boolean);
@@ -911,7 +1151,8 @@
                 return;
             }
 
-            const p = coursePrograms[activeIdx];
+            const c = getActiveCourse();
+            const p = c.programs[activeIdx];
             const dateStr = new Date().toLocaleDateString('en-GB');
 
             const entry = {
@@ -926,7 +1167,7 @@
             if (existingIdx >= 0) savedRecords[existingIdx] = entry;
             else savedRecords.push(entry);
 
-            const localKey = `hits_saved_${courseInfo.code}_${student.regNo}`;
+            const localKey = `hits_saved_${c.code}_${student.regNo}`;
             localStorage.setItem(localKey, JSON.stringify(savedRecords));
 
             renderStudentExerciseList();
@@ -958,7 +1199,6 @@
             return steps.join("\n");
         }
 
-        // ULTRA-COMPACT VECTOR FLOWCHART (GUARANTEED TO FIT 100% IN A4 PAGE WITHOUT OVERFLOW)
         function generatePureSvgFlowchart(code, lang) {
             if (lang === 'sql') {
                 return `
@@ -968,26 +1208,22 @@
                             <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000"/>
                         </marker>
                     </defs>
-                    <!-- 1. Schema Table -->
                     <rect x="5" y="16" width="125" height="42" rx="4" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
                     <rect x="5" y="16" width="125" height="15" rx="4" fill="#f1f5f9" stroke="#000000" stroke-width="1.5"/>
                     <text x="67" y="27" font-family="'Arial', sans-serif" font-size="8" font-weight="bold" text-anchor="middle">RELATION SCHEMA</text>
                     <text x="67" y="47" font-family="'Courier New', monospace" font-size="7.5" text-anchor="middle">[PK] Record_ID, Data</text>
                     <line x1="130" y1="37" x2="160" y2="37" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-                    <!-- 2. Execution -->
                     <rect x="165" y="18" width="120" height="38" rx="4" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
                     <text x="225" y="35" font-family="'Arial', sans-serif" font-size="8.5" font-weight="bold" text-anchor="middle">SQL DDL / DML</text>
                     <text x="225" y="48" font-family="'Arial', sans-serif" font-size="7.5" text-anchor="middle">Execute Statements</text>
                     <line x1="285" y1="37" x2="315" y2="37" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-                    <!-- 3. Projection -->
                     <polygon points="325,18 435,18 420,56 310,56" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
                     <text x="372" y="35" font-family="'Arial', sans-serif" font-size="8.5" font-weight="bold" text-anchor="middle">QUERY PROJECTION</text>
                     <text x="372" y="48" font-family="'Arial', sans-serif" font-size="7.5" text-anchor="middle">Fetch Output Tuples</text>
                     <line x1="430" y1="37" x2="465" y2="37" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-                    <!-- 4. Stop -->
                     <rect x="470" y="23" width="70" height="28" rx="14" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
                     <text x="505" y="41" font-family="'Arial', sans-serif" font-size="9" font-weight="bold" text-anchor="middle">STOP</text>
                 </svg>`;
@@ -1002,18 +1238,15 @@
                         <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000"/>
                     </marker>
                 </defs>
-                <!-- 1. Start Pill -->
                 <rect x="5" y="23" width="60" height="28" rx="14" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
                 <text x="35" y="41" font-family="'Arial', sans-serif" font-size="9" font-weight="bold" text-anchor="middle">START</text>
                 <line x1="65" y1="37" x2="95" y2="37" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-                <!-- 2. Read Input / Init (Parallelogram) -->
                 <polygon points="105,18 205,18 190,56 90,56" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
                 <text x="147" y="35" font-family="'Arial', sans-serif" font-size="8.5" font-weight="bold" text-anchor="middle">INPUT / INIT</text>
-                <text x="147" y="47" font-family="'Arial', sans-serif" font-size="7.5" text-anchor="middle">Variables & Streams</text>
+                <text x="147" y="47" font-family="'Arial', sans-serif" font-size="7.5" text-anchor="middle">Variables &amp; Streams</text>
                 <line x1="200" y1="37" x2="230" y2="37" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-                <!-- 3. Condition or Computation Box -->
                 ${hasCondition ? `
                 <polygon points="280,16 325,37 280,58 235,37" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
                 <text x="280" y="36" font-family="'Arial', sans-serif" font-size="7.5" font-weight="bold" text-anchor="middle">CONDITION</text>
@@ -1026,13 +1259,11 @@
                 <line x1="325" y1="37" x2="355" y2="37" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
                 `}
 
-                <!-- 4. Output (Parallelogram) -->
                 <polygon points="365,18 465,18 450,56 350,56" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
                 <text x="407" y="35" font-family="'Arial', sans-serif" font-size="8.5" font-weight="bold" text-anchor="middle">OUTPUT</text>
                 <text x="407" y="47" font-family="'Arial', sans-serif" font-size="7.5" text-anchor="middle">Display Target Result</text>
                 <line x1="460" y1="37" x2="485" y2="37" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-                <!-- 5. Stop Pill -->
                 <rect x="488" y="23" width="58" height="28" rx="14" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
                 <text x="517" y="41" font-family="'Arial', sans-serif" font-size="9" font-weight="bold" text-anchor="middle">STOP</text>
             </svg>`;
@@ -1041,9 +1272,10 @@
         // ==================== PDF BUILDER WITH VECTOR COLLEGE LOGO ====================
         async function buildPrintableDocumentHtml() {
             const logoSvg = getCollegeLogoHtml();
+            const c = getActiveCourse();
 
             let html = `
-                <!-- PAGE 1: COVER PAGE (WITH PROPORTIONAL LOGO & DYNAMIC BCA/MCA) -->
+                <!-- PAGE 1: COVER PAGE -->
                 <div class="page-break" style="padding: 10px 15px; text-align: center; font-family: 'Times New Roman', serif;">
                     <div style="margin-bottom: 20px;">
                         ${logoSvg}
@@ -1053,7 +1285,7 @@
                     <p style="font-size: 13pt; font-weight: bold; margin-top: 5px;">${getDegreeFullTitle()}</p>
 
                     <p style="font-size: 12pt; font-weight: bold; margin-top: 25px;">(SEMESTER – II)</p>
-                    <h2 style="font-size: 15pt; font-weight: bold; margin-top: 15px;">${courseInfo.code} – ${courseInfo.name}</h2>
+                    <h2 style="font-size: 15pt; font-weight: bold; margin-top: 15px;">${c.code} – ${c.name}</h2>
                     <p style="font-size: 13pt; font-weight: bold; margin-top: 8px;">Integrated Practical Lab Record</p>
 
                     <div style="border: 2px solid #000; padding: 18px; margin: 45px auto; max-width: 480px; text-align: left; line-height: 2.1; font-size: 12pt; font-weight: bold;">
@@ -1065,7 +1297,7 @@
                     </div>
                 </div>
 
-                <!-- PAGE 2: BONAFIDE CERTIFICATE (WITH PROPORTIONAL LOGO & DYNAMIC BCA/MCA) -->
+                <!-- PAGE 2: BONAFIDE CERTIFICATE -->
                 <div class="page-break" style="padding: 10px 15px; font-family: 'Times New Roman', serif;">
                     <div style="text-align: center;">
                         <div style="margin-bottom: 20px;">
@@ -1082,7 +1314,7 @@
                         This is to certify that this is a bonafide record of work done by <strong>${student.name}</strong> 
                         (Register Number: <strong>${student.regNo}</strong>) of <strong>${getDegreeShort()}</strong> class, 
                         submitted for the End Semester Practical Examination held on ____________________ 
-                        in <strong>${courseInfo.code} – ${courseInfo.name}</strong> during the academic year <strong>2024 – 2025</strong>.
+                        in <strong>${c.code} – ${c.name}</strong> during the academic year <strong>2024 – 2025</strong>.
                     </p>
                     
                     <div style="margin-top: 90px; display: flex; justify-content: space-between; text-align: center; font-weight: bold; font-size: 11pt;">
@@ -1095,7 +1327,7 @@
                 <!-- PAGE 3: INDEX -->
                 <div class="page-break" style="padding: 10px 15px; font-family: 'Times New Roman', serif;">
                     <h2 style="text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px;">
-                        ${courseInfo.name} – RECORD INDEX
+                        ${c.name} – RECORD INDEX
                     </h2>
                     <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10pt;" border="1">
                         <thead>
@@ -1165,7 +1397,7 @@
                 </div>
             `;
 
-            // PAGES 5+: EXERCISES (WITH STREAMLINED FLOWCHARTS THAT FIT 100% IN ONE PAGE)
+            // PAGES 5+: EXERCISES
             savedRecords.forEach((rec, i) => {
                 const autoProcedure = generateProcedureFromCode(rec.code, rec.lang);
                 const flowchartSvg = generatePureSvgFlowchart(rec.code, rec.lang);
@@ -1209,6 +1441,7 @@
                 return;
             }
 
+            const c = getActiveCourse();
             const printDiv = document.getElementById('printableLabRecord');
             printDiv.innerHTML = `<div style="text-align:center; padding: 40px; font-family:sans-serif;"><h2>Generating Lab Record Document...</h2></div>`;
             printDiv.classList.remove('hidden');
@@ -1219,7 +1452,7 @@
             const element = document.getElementById('printableLabRecord');
             const opt = {
                 margin: [10, 10, 10, 10],
-                filename: `${student.regNo}_${courseInfo.code}_${getDegreeShort()}_LabRecord.pdf`,
+                filename: `${student.regNo}_${c.code}_${getDegreeShort()}_LabRecord.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true, logging: false },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
