@@ -73,16 +73,27 @@
         .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 15px; }
         .modal-content { background: #fff; border-radius: 12px; max-width: 480px; width: 100%; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
 
-        /* STRICT PDF PRINT MEDIA CSS */
+        /* STRICT PDF RENDER & PRINT MEDIA CSS */
+        #printableLabRecord {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 750px !important;
+            max-width: 750px !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+            box-sizing: border-box !important;
+        }
+
         @media print {
-            @page { size: A4 portrait; margin: 10mm; }
+            @page { size: A4 portrait; margin: 8mm; }
             body { background: #ffffff !important; color: #000000 !important; padding: 0 !important; margin: 0 !important; }
             body * { visibility: hidden !important; }
             #printableLabRecord, #printableLabRecord * { visibility: visible !important; }
             #printableLabRecord { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; background: #ffffff !important; }
-            .page-break { page-break-after: always !important; break-after: page !important; padding-bottom: 15px; background: #ffffff !important; }
+            .page-break { page-break-after: always !important; break-after: page !important; padding-bottom: 12px; background: #ffffff !important; }
             pre, code, div, p, table, th, td { background: transparent !important; box-shadow: none !important; }
-            .record-footer { position: fixed; bottom: 4mm; left: 0; right: 0; text-align: center; font-size: 9.5pt; font-weight: bold; border-top: 1px solid #000; padding-top: 4px; }
+            .record-footer { position: fixed; bottom: 4mm; left: 0; right: 0; text-align: center; font-size: 9pt; font-weight: bold; border-top: 1px solid #000; padding-top: 4px; }
         }
     </style>
 </head>
@@ -449,11 +460,11 @@
             document.body.removeChild(ta);
         }
 
-        // ==================== OFFICIAL HINDUSTAN UNIVERSITY LOGO ====================
+        // ==================== OFFICIAL HINDUSTAN UNIVERSITY LOGO (FIXED PIXEL CONSTRAINTS) ====================
         function getCollegeLogoHtml() {
             return `
-            <div style="text-align: center; margin: 0 auto; width: 100%; max-width: 250px;">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 120" width="100%" height="auto" style="display: block; margin: 0 auto;">
+            <div style="text-align: center; margin: 0 auto 10px auto; width: 200px; max-width: 200px;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 120" width="200" height="44" style="display: block; margin: 0 auto; width: 200px; height: 44px;">
                     <!-- Orange Cogwheel Outer Teeth -->
                     <g transform="translate(60, 60)">
                         <rect x="-8" y="-56" width="16" height="112" rx="3" fill="#f97316"/>
@@ -521,7 +532,7 @@
         ];
 
         let activeCourseIndex = 0;
-        let studentCourseData = null; // Used when student loads via shared link
+        let studentCourseData = null;
         let student = null;
         let activeIdx = 0;
         let savedRecords = [];
@@ -645,7 +656,7 @@
             renderCourseDropdown();
             renderActiveCourseForm();
             renderAdminProgramList();
-            alert(`Course "${code} - ${name}" added successfully! Now add programs to this course.`);
+            alert(`Course "${code} - ${name}" added successfully!`);
         }
 
         function deleteActiveCourse() {
@@ -1047,7 +1058,6 @@
 
             let networkOk = false;
 
-            // TRY CLOUD SANDBOX (PISTON)
             try {
                 const target = pistonLangs[lang];
                 const res = await fetch('https://emkc.org/api/v2/piston/execute', {
@@ -1073,7 +1083,6 @@
                 console.warn("Cloud sandbox unreachable. Switching to in-browser engine:", e);
             }
 
-            // FALLBACK IN-BROWSER SIMULATION RUNNER
             if (!networkOk) {
                 consoleBox.textContent = "[Note: Executed via In-Browser Runtime Engine]\n";
                 const sim = runLocalSimulation(lang, code, stdin);
@@ -1174,7 +1183,7 @@
             alert(`Program "${p.title}" saved successfully to your lab record!`);
         }
 
-        // ==================== PROCEDURES & STREAMLINED HORIZONTAL FLOWCHART ====================
+        // ==================== PROCEDURES & COMPACT VECTOR FLOWCHART ====================
         function generateProcedureFromCode(code, lang) {
             if (lang === 'sql') {
                 return "1. Connect to relational database engine.\n2. Execute DDL statements to specify relational schemas and attributes.\n3. Execute DML queries to insert tuples into defined relations.\n4. Execute DQL queries with projections and selections.\n5. Fetch and render tabular output tuples.";
@@ -1199,10 +1208,11 @@
             return steps.join("\n");
         }
 
+        // COMPACT FIXED-DIMENSION VECTOR FLOWCHART (EXACTLY 380px x 50px)
         function generatePureSvgFlowchart(code, lang) {
             if (lang === 'sql') {
                 return `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 550 75" width="100%" height="auto" style="max-height: 70px; display: block; margin: 0 auto;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 550 75" width="380" height="50" style="display: block; margin: 0 auto; width: 380px; height: 50px;">
                     <defs>
                         <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
                             <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000"/>
@@ -1232,7 +1242,7 @@
             const hasCondition = code.includes("if") || code.includes("switch") || code.includes("for") || code.includes("while");
 
             return `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 550 75" width="100%" height="auto" style="max-height: 70px; display: block; margin: 0 auto;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 550 75" width="380" height="50" style="display: block; margin: 0 auto; width: 380px; height: 50px;">
                 <defs>
                     <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
                         <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000"/>
@@ -1269,7 +1279,7 @@
             </svg>`;
         }
 
-        // ==================== PDF BUILDER WITH VECTOR COLLEGE LOGO ====================
+        // ==================== PDF BUILDER ====================
         async function buildPrintableDocumentHtml() {
             const logoSvg = getCollegeLogoHtml();
             const c = getActiveCourse();
@@ -1277,18 +1287,18 @@
             let html = `
                 <!-- PAGE 1: COVER PAGE -->
                 <div class="page-break" style="padding: 10px 15px; text-align: center; font-family: 'Times New Roman', serif;">
-                    <div style="margin-bottom: 20px;">
+                    <div style="margin-bottom: 15px;">
                         ${logoSvg}
                     </div>
                     
-                    <p style="font-size: 13pt; font-weight: bold; margin-top: 25px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
-                    <p style="font-size: 13pt; font-weight: bold; margin-top: 5px;">${getDegreeFullTitle()}</p>
+                    <p style="font-size: 13pt; font-weight: bold; margin-top: 20px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
+                    <p style="font-size: 13pt; font-weight: bold; margin-top: 4px;">${getDegreeFullTitle()}</p>
 
-                    <p style="font-size: 12pt; font-weight: bold; margin-top: 25px;">(SEMESTER – II)</p>
-                    <h2 style="font-size: 15pt; font-weight: bold; margin-top: 15px;">${c.code} – ${c.name}</h2>
-                    <p style="font-size: 13pt; font-weight: bold; margin-top: 8px;">Integrated Practical Lab Record</p>
+                    <p style="font-size: 11.5pt; font-weight: bold; margin-top: 20px;">(SEMESTER – II)</p>
+                    <h2 style="font-size: 14pt; font-weight: bold; margin-top: 12px;">${c.code} – ${c.name}</h2>
+                    <p style="font-size: 12.5pt; font-weight: bold; margin-top: 6px;">Integrated Practical Lab Record</p>
 
-                    <div style="border: 2px solid #000; padding: 18px; margin: 45px auto; max-width: 480px; text-align: left; line-height: 2.1; font-size: 12pt; font-weight: bold;">
+                    <div style="border: 2px solid #000; padding: 15px 20px; margin: 35px auto; max-width: 440px; text-align: left; line-height: 2.1; font-size: 11.5pt; font-weight: bold;">
                         <p style="margin:0;">Name &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${student.name}</p>
                         <p style="margin:0;">Register No &nbsp;&nbsp;&nbsp;: ${student.regNo}</p>
                         <p style="margin:0;">Roll No &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${student.rollNo || 'N/A'}</p>
@@ -1300,43 +1310,43 @@
                 <!-- PAGE 2: BONAFIDE CERTIFICATE -->
                 <div class="page-break" style="padding: 10px 15px; font-family: 'Times New Roman', serif;">
                     <div style="text-align: center;">
-                        <div style="margin-bottom: 20px;">
+                        <div style="margin-bottom: 15px;">
                             ${logoSvg}
                         </div>
                         <p style="font-size: 13pt; font-weight: bold; margin-top: 15px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
-                        <p style="font-size: 13pt; font-weight: bold; margin-top: 5px;">${getDegreeFullTitle()}</p>
-                        <p style="font-size: 12pt; font-weight: bold; margin-top: 5px;">(SEMESTER – II)</p>
+                        <p style="font-size: 13pt; font-weight: bold; margin-top: 4px;">${getDegreeFullTitle()}</p>
+                        <p style="font-size: 11.5pt; font-weight: bold; margin-top: 4px;">(SEMESTER – II)</p>
 
-                        <h2 style="font-size: 17pt; font-weight: bold; margin-top: 25px; margin-bottom: 25px; text-decoration: underline;">Bonafide Certificate</h2>
+                        <h2 style="font-size: 16pt; font-weight: bold; margin-top: 20px; margin-bottom: 20px; text-decoration: underline;">Bonafide Certificate</h2>
                     </div>
 
-                    <p style="font-size: 12pt; line-height: 2.2; text-align: justify; margin-top: 25px;">
+                    <p style="font-size: 11.5pt; line-height: 2.1; text-align: justify; margin-top: 20px;">
                         This is to certify that this is a bonafide record of work done by <strong>${student.name}</strong> 
                         (Register Number: <strong>${student.regNo}</strong>) of <strong>${getDegreeShort()}</strong> class, 
                         submitted for the End Semester Practical Examination held on ____________________ 
                         in <strong>${c.code} – ${c.name}</strong> during the academic year <strong>2024 – 2025</strong>.
                     </p>
                     
-                    <div style="margin-top: 90px; display: flex; justify-content: space-between; text-align: center; font-weight: bold; font-size: 11pt;">
-                        <div><p style="border-top: 1px solid #000; padding-top: 5px; width: 140px;">Staff In-Charge</p></div>
-                        <div><p style="border-top: 1px solid #000; padding-top: 5px; width: 140px;">Internal Examiner</p></div>
-                        <div><p style="border-top: 1px solid #000; padding-top: 5px; width: 140px;">External Examiner</p></div>
+                    <div style="margin-top: 80px; display: flex; justify-content: space-between; text-align: center; font-weight: bold; font-size: 10.5pt;">
+                        <div><p style="border-top: 1px solid #000; padding-top: 5px; width: 130px;">Staff In-Charge</p></div>
+                        <div><p style="border-top: 1px solid #000; padding-top: 5px; width: 130px;">Internal Examiner</p></div>
+                        <div><p style="border-top: 1px solid #000; padding-top: 5px; width: 130px;">External Examiner</p></div>
                     </div>
                 </div>
 
                 <!-- PAGE 3: INDEX -->
                 <div class="page-break" style="padding: 10px 15px; font-family: 'Times New Roman', serif;">
-                    <h2 style="text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px;">
+                    <h2 style="text-align: center; font-size: 13pt; font-weight: bold; margin-bottom: 16px;">
                         ${c.name} – RECORD INDEX
                     </h2>
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10pt;" border="1">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 9.5pt;" border="1">
                         <thead>
                             <tr style="background: #f1f5f9;">
-                                <th style="padding: 8px; width: 8%;">S.NO</th>
-                                <th style="padding: 8px; width: 18%;">DATE</th>
-                                <th style="padding: 8px;">NAME OF THE EXPERIMENT</th>
-                                <th style="padding: 8px; width: 12%;">PAGE No.</th>
-                                <th style="padding: 8px; width: 20%;">SIGNATURE</th>
+                                <th style="padding: 6px; width: 8%;">S.NO</th>
+                                <th style="padding: 6px; width: 18%;">DATE</th>
+                                <th style="padding: 6px;">NAME OF THE EXPERIMENT</th>
+                                <th style="padding: 6px; width: 12%;">PAGE No.</th>
+                                <th style="padding: 6px; width: 20%;">SIGNATURE</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1345,11 +1355,11 @@
             savedRecords.forEach((rec, i) => {
                 html += `
                     <tr>
-                        <td style="padding: 8px; text-align: center;">${i + 1}</td>
-                        <td style="padding: 8px; text-align: center;">${rec.date}</td>
-                        <td style="padding: 8px;">${rec.title} [${rec.lang.toUpperCase()}]</td>
-                        <td style="padding: 8px; text-align: center;">${i + 5}</td>
-                        <td style="padding: 8px;"></td>
+                        <td style="padding: 6px; text-align: center;">${i + 1}</td>
+                        <td style="padding: 6px; text-align: center;">${rec.date}</td>
+                        <td style="padding: 6px;">${rec.title} [${rec.lang.toUpperCase()}]</td>
+                        <td style="padding: 6px; text-align: center;">${i + 5}</td>
+                        <td style="padding: 6px;"></td>
                     </tr>
                 `;
             });
@@ -1361,17 +1371,17 @@
 
                 <!-- PAGE 4: STAFF EVALUATION SHEET -->
                 <div class="page-break" style="padding: 10px 15px; font-family: 'Times New Roman', serif;">
-                    <h2 style="text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px;">STAFF EVALUATION SHEET</h2>
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt;" border="1">
+                    <h2 style="text-align: center; font-size: 13pt; font-weight: bold; margin-bottom: 16px;">STAFF EVALUATION SHEET</h2>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 8.5pt;" border="1">
                         <thead>
                             <tr style="background: #f1f5f9;">
-                                <th style="padding: 6px;">S.NO</th>
-                                <th style="padding: 6px;">PROGRAM TITLE</th>
-                                <th style="padding: 6px;">AIM (2)</th>
-                                <th style="padding: 6px;">ALGORITHM (2)</th>
-                                <th style="padding: 6px;">PROGRAM (4)</th>
-                                <th style="padding: 6px;">OUTPUT (2)</th>
-                                <th style="padding: 6px;">TOTAL (10)</th>
+                                <th style="padding: 5px;">S.NO</th>
+                                <th style="padding: 5px;">PROGRAM TITLE</th>
+                                <th style="padding: 5px;">AIM (2)</th>
+                                <th style="padding: 5px;">ALGORITHM (2)</th>
+                                <th style="padding: 5px;">PROGRAM (4)</th>
+                                <th style="padding: 5px;">OUTPUT (2)</th>
+                                <th style="padding: 5px;">TOTAL (10)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1380,13 +1390,13 @@
             savedRecords.forEach((rec, i) => {
                 html += `
                     <tr>
-                        <td style="padding: 8px; text-align: center;">${i + 1}</td>
-                        <td style="padding: 8px;">${rec.title}</td>
-                        <td style="padding: 8px;"></td>
-                        <td style="padding: 8px;"></td>
-                        <td style="padding: 8px;"></td>
-                        <td style="padding: 8px;"></td>
-                        <td style="padding: 8px;"></td>
+                        <td style="padding: 6px; text-align: center;">${i + 1}</td>
+                        <td style="padding: 6px;">${rec.title}</td>
+                        <td style="padding: 6px;"></td>
+                        <td style="padding: 6px;"></td>
+                        <td style="padding: 6px;"></td>
+                        <td style="padding: 6px;"></td>
+                        <td style="padding: 6px;"></td>
                     </tr>
                 `;
             });
@@ -1397,34 +1407,34 @@
                 </div>
             `;
 
-            // PAGES 5+: EXERCISES
+            // PAGES 5+: EXERCISES (WITH STREAMLINED FLOWCHART FIT)
             savedRecords.forEach((rec, i) => {
                 const autoProcedure = generateProcedureFromCode(rec.code, rec.lang);
                 const flowchartSvg = generatePureSvgFlowchart(rec.code, rec.lang);
 
                 html += `
-                    <div class="page-break" style="padding: 10px 15px; font-family: 'Times New Roman', serif; position: relative;">
-                        <h3 style="font-size: 12.5pt; font-weight: bold;">${i+1}. ${rec.title}</h3>
+                    <div class="page-break" style="padding: 8px 15px; font-family: 'Times New Roman', serif; position: relative;">
+                        <h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 4px;">${i+1}. ${rec.title}</h3>
                         
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 10.5pt;">Aim:</p>
-                        <p style="margin-bottom: 6px; font-size: 10pt;">To design, develop and execute a program in ${rec.lang.toUpperCase()} to implement ${rec.title.toLowerCase()} and verify target output.</p>
+                        <p style="font-weight: bold; margin-top: 6px; font-size: 10pt;">Aim:</p>
+                        <p style="margin-bottom: 4px; font-size: 9.5pt;">To design, develop and execute a program in ${rec.lang.toUpperCase()} to implement ${rec.title.toLowerCase()} and verify target output.</p>
                         
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 10.5pt;">Procedure / Algorithm:</p>
-                        <pre style="font-family: 'Times New Roman', serif; white-space: pre-wrap; font-size: 9pt; line-height: 1.4; margin-bottom: 6px; background: transparent !important; border: none; padding: 0;">${autoProcedure}</pre>
+                        <p style="font-weight: bold; margin-top: 6px; font-size: 10pt;">Procedure / Algorithm:</p>
+                        <pre style="font-family: 'Times New Roman', serif; white-space: pre-wrap; font-size: 8.5pt; line-height: 1.35; margin-bottom: 4px; background: transparent !important; border: none; padding: 0;">${autoProcedure}</pre>
                         
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 10.5pt;">${rec.lang === 'sql' ? 'Relational Schema Flow Diagram:' : 'Flowchart:'}</p>
-                        <div style="background: transparent !important; padding: 4px; border: 1px solid #000000; text-align: center; margin-bottom: 8px;">
+                        <p style="font-weight: bold; margin-top: 6px; font-size: 10pt;">${rec.lang === 'sql' ? 'Relational Schema Flow Diagram:' : 'Flowchart:'}</p>
+                        <div style="background: transparent !important; padding: 3px; border: 1px solid #000000; text-align: center; margin: 3px auto 6px auto; max-width: 420px;">
                             ${flowchartSvg}
                         </div>
 
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 10.5pt;">Program / Query Code:</p>
-                        <pre style="background: transparent !important; padding: 6px; font-size: 8.5pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 6px; max-height: 190px; overflow: hidden; color: #000000;">${rec.code}</pre>
+                        <p style="font-weight: bold; margin-top: 6px; font-size: 10pt;">Program / Query Code:</p>
+                        <pre style="background: transparent !important; padding: 5px; font-size: 8pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 4px; max-height: 170px; overflow: hidden; color: #000000;">${rec.code}</pre>
                         
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 10.5pt;">Output:</p>
-                        <pre style="background: transparent !important; padding: 6px; font-size: 8.5pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 6px; max-height: 70px; overflow: hidden; color: #000000;">${rec.output}</pre>
+                        <p style="font-weight: bold; margin-top: 6px; font-size: 10pt;">Output:</p>
+                        <pre style="background: transparent !important; padding: 5px; font-size: 8pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 4px; max-height: 60px; overflow: hidden; color: #000000;">${rec.output}</pre>
                         
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 10.5pt;">Result:</p>
-                        <p style="margin-bottom: 20px; font-size: 10pt;">Thus, the program was executed successfully and the output was verified.</p>
+                        <p style="font-weight: bold; margin-top: 6px; font-size: 10pt;">Result:</p>
+                        <p style="margin-bottom: 16px; font-size: 9.5pt;">Thus, the program was executed successfully and the output was verified.</p>
                         
                         <div class="record-footer">Student Name: ${student.name} | Register No: ${student.regNo} | Completed: ${rec.date}</div>
                     </div>
@@ -1434,7 +1444,7 @@
             return html;
         }
 
-        // ==================== DIRECT PDF DOWNLOAD ====================
+        // ==================== DIRECT PDF DOWNLOAD (LOCKED TO 750PX A4 CANVAS) ====================
         async function downloadDirectPDF() {
             if (savedRecords.length === 0) {
                 alert("Please save at least one completed program to your record before downloading!");
@@ -1450,11 +1460,13 @@
             printDiv.innerHTML = html;
 
             const element = document.getElementById('printableLabRecord');
+            element.style.width = "750px";
+
             const opt = {
-                margin: [10, 10, 10, 10],
+                margin: [8, 8, 8, 8],
                 filename: `${student.regNo}_${c.code}_${getDegreeShort()}_LabRecord.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, logging: false },
+                html2canvas: { scale: 2, useCORS: true, logging: false, width: 750 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                 pagebreak: { mode: ['css', 'legacy'] }
             };
