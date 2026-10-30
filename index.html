@@ -69,26 +69,27 @@
         .badge-green { background: #d1fae5; color: #065f46; }
         .badge-gray { background: #f1f5f9; color: #475569; }
 
-        /* MODAL STYLING */
         .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 15px; }
         .modal-content { background: #fff; border-radius: 12px; max-width: 480px; width: 100%; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
 
-        /* STRICT PDF RENDER CANVAS CSS */
+        /* STRICT A4 DIMENSIONED PDF ENGINE (794px x 1122px at 96 DPI) */
         #printableLabRecord {
             background: #ffffff !important;
             color: #000000 !important;
             box-sizing: border-box !important;
-            width: 750px !important;
+            width: 794px !important;
             margin: 0 auto;
         }
 
-        .pdf-page-container {
-            width: 750px !important;
-            min-height: 1050px !important;
-            padding: 30px 40px !important;
+        .pdf-a4-page {
+            width: 794px !important;
+            height: 1120px !important;
+            max-height: 1120px !important;
+            padding: 40px 45px 35px 45px !important;
             background: #ffffff !important;
             box-sizing: border-box !important;
             position: relative !important;
+            overflow: hidden !important;
             page-break-after: always !important;
             break-after: page !important;
         }
@@ -96,13 +97,13 @@
         .record-footer {
             position: absolute;
             bottom: 25px;
-            left: 40px;
-            right: 40px;
+            left: 45px;
+            right: 45px;
             text-align: center;
-            font-size: 9.5pt;
+            font-size: 9pt;
             font-weight: bold;
             border-top: 1px solid #000;
-            padding-top: 6px;
+            padding-top: 5px;
         }
     </style>
 </head>
@@ -117,7 +118,7 @@
                     <span style="background: #3b82f6; width: 10px; height: 10px; border-radius: 50%;"></span>
                     <h1 style="font-size: 20px; font-weight: 700;">HITS Faculty Administration</h1>
                 </div>
-                <p style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Configure Courses, Programs, and Central Google Drive/Sheet Syncing.</p>
+                <p style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Configure Courses (BCA/MCA), upload programs line-by-line, and deploy student practice links.</p>
             </div>
             <div class="flex gap-2">
                 <button type="button" onclick="generateAndCopyStudentLink()" class="btn btn-primary" style="background: #10b981;">
@@ -142,11 +143,11 @@
             </div>
         </div>
 
-        <!-- COURSE MANAGEMENT CARD -->
+        <!-- COURSE MANAGEMENT CARD (CLEAN: NO GOOGLE DRIVE TABS) -->
         <div class="pro-card">
             <div class="flex justify-between items-center" style="margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
                 <h2 style="font-size: 15px; font-weight: 700; color: #1e293b;">
-                    <i class="fa-solid fa-graduation-cap" style="color: var(--primary);"></i> Course & Cloud Drive Management
+                    <i class="fa-solid fa-graduation-cap" style="color: var(--primary);"></i> Course Management
                 </h2>
                 <div class="flex gap-2">
                     <button type="button" onclick="openAddCourseModal()" class="btn btn-primary" style="font-size: 12px; padding: 7px 14px;">
@@ -175,15 +176,9 @@
                     <input type="text" id="activeCourseCodeInput" onchange="updateActiveCourseDetails()" placeholder="e.g. BCA41001">
                 </div>
             </div>
-            <div class="grid grid-2 gap-3" style="margin-top: 10px;">
-                <div>
-                    <label>Course Name</label>
-                    <input type="text" id="activeCourseNameInput" onchange="updateActiveCourseDetails()" placeholder="e.g. PROBLEM SOLVING &amp; PROGRAMMING LABORATORY">
-                </div>
-                <div>
-                    <label>Google Apps Script Web App URL (Saves to Drive &amp; Sheets)</label>
-                    <input type="url" id="googleScriptUrlInput" onchange="updateActiveCourseDetails()" placeholder="https://script.google.com/macros/s/.../exec">
-                </div>
+            <div style="margin-top: 10px;">
+                <label>Course Name</label>
+                <input type="text" id="activeCourseNameInput" onchange="updateActiveCourseDetails()" placeholder="e.g. PROBLEM SOLVING &amp; PROGRAMMING LABORATORY">
             </div>
         </div>
 
@@ -196,7 +191,7 @@
                 
                 <div onclick="triggerDocUpload()" style="border: 2px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; padding: 25px; text-align: center; cursor: pointer;">
                     <i class="fa-solid fa-file-lines" style="font-size: 32px; color: var(--primary); margin-bottom: 8px;"></i>
-                    <p style="font-weight: 600; font-size: 13px;">Click to Upload Syllabus / Manual Document</p>
+                    <p style="font-weight: 600; font-size: 13px;">Click to Upload Syllabus / Document</p>
                     <p style="font-size: 11px; color: #64748b; margin-top: 3px;">Reads Word (.docx), Text (.txt), or Code files line-by-line</p>
                 </div>
                 <input type="file" id="docFileInput" accept=".docx,.txt,.c,.cpp,.java,.py,.sql,.json" onchange="handleDocumentUpload(event)" class="hidden">
@@ -283,9 +278,8 @@
         </div>
     </div>
 
-    <!-- ==================== STUDENT WORKSPACE & COMPILER ==================== -->
+    <!-- ==================== STUDENT WORKSPACE ==================== -->
     <div id="studentPortalView" class="hidden">
-        <!-- STUDENT LOGIN MODAL -->
         <div id="studentAuthModal" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 15px;">
             <div class="pro-card" style="width: 420px; max-width: 100%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);">
                 <div style="text-align: center; margin-bottom: 20px;">
@@ -325,7 +319,6 @@
             </div>
         </div>
 
-        <!-- MAIN STUDENT WORKSPACE -->
         <div id="studentMainContent" class="hidden app-container">
             <header class="pro-card flex justify-between items-center" style="padding: 14px 20px;">
                 <div>
@@ -340,7 +333,6 @@
             </header>
 
             <div class="grid" style="grid-template-columns: var(--sidebar-w) 1fr; gap: 20px;">
-                <!-- SIDEBAR: EXERCISES LIST -->
                 <div class="pro-card" style="padding: 16px;">
                     <div class="flex justify-between items-center" style="margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
                         <h3 style="font-size: 13px; font-weight: 700; color: #1e293b;">Course Program List</h3>
@@ -349,7 +341,6 @@
                     <div id="studentExerciseList" class="flex flex-col gap-2" style="max-height: 520px; overflow-y: auto;"></div>
                 </div>
 
-                <!-- RIGHT: COMPILER INTERFACE (STARTS EMPTY FOR STUDENTS TO CODE) -->
                 <div class="pro-card flex flex-col gap-3" style="background: #0f172a; color: #fff; padding: 16px;">
                     <div class="flex justify-between items-center flex-wrap gap-2" style="border-bottom: 1px solid #1e293b; padding-bottom: 10px;">
                         <div>
@@ -409,11 +400,10 @@
     </div>
 
     <script>
-        // ==================== DEFAULT CLOUD WEB APP URL ====================
-        // You can paste your default URL here, or enter it in the Admin configuration box!
-        const DEFAULT_GOOGLE_SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";
+        // ==================== BACKGROUND CENTRAL CLOUD SYNC CONFIGURATION ====================
+        // Put your Google Apps Script Web App URL here. It operates completely in the background!
+        const CENTRAL_GOOGLE_SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";
 
-        // ==================== ROBUST DATA COMPRESSION & CLIPBOARD ====================
         function safeCompress(dataObj) {
             const jsonStr = JSON.stringify(dataObj);
             if (window.LZString && typeof LZString.compressToEncodedURIComponent === 'function') {
@@ -463,34 +453,27 @@
             document.body.removeChild(ta);
         }
 
-        // ==================== RELIABLE GOOGLE DRIVE & SHEET TRANSMITTER ====================
+        // ==================== BACKGROUND CLOUD DISPATCHER ====================
         async function syncToGoogleDriveAndSheets(payload) {
-            const c = getActiveCourse();
-            let endpointUrl = (c && c.webhookUrl) ? c.webhookUrl : DEFAULT_GOOGLE_SCRIPT_URL;
-
-            if (!endpointUrl || endpointUrl.includes("PASTE_YOUR_APPS_SCRIPT_URL")) {
-                console.log("No Google Apps Script URL provided. Skipped cloud sync.");
+            if (!CENTRAL_GOOGLE_SCRIPT_URL || CENTRAL_GOOGLE_SCRIPT_URL.includes("PASTE_YOUR_APPS_SCRIPT_URL")) {
                 return;
             }
-
             try {
-                // Post as URL-encoded parameter so Apps Script handles it without CORS blocks
                 const formBody = new URLSearchParams();
                 formBody.append("payload", JSON.stringify(payload));
 
-                await fetch(endpointUrl, {
+                await fetch(CENTRAL_GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
                     body: formBody.toString()
                 });
-                console.log("Record synced to Google Drive & Sheet successfully!");
             } catch (err) {
-                console.warn("Cloud sync encountered a network error:", err);
+                console.warn("Background cloud sync note:", err);
             }
         }
 
-        // ==================== OFFICIAL HINDUSTAN UNIVERSITY LOGO ====================
+        // ==================== EXACT OFFICIAL HINDUSTAN UNIVERSITY LOGO ====================
         function getCollegeLogoHtml() {
             return `
             <div style="text-align: center; margin: 0 auto 10px auto; width: 220px;">
@@ -526,7 +509,6 @@
                 code: "BCA41001",
                 name: "PROBLEM SOLVING & PROGRAMMING LABORATORY",
                 degree: "BCA",
-                webhookUrl: "",
                 programs: [
                     {
                         title: "Read an integer and display it",
@@ -548,7 +530,6 @@
                 code: "MCA21001",
                 name: "ADVANCED DATABASE MANAGEMENT SYSTEMS LAB",
                 degree: "MCA",
-                webhookUrl: "",
                 programs: [
                     {
                         title: "Relational Join and Projection Operations",
@@ -597,7 +578,6 @@
                             code: (parsed.ci && parsed.ci.code) || "BCA41001",
                             name: (parsed.ci && parsed.ci.name) || "PRACTICAL LAB",
                             degree: (parsed.ci && parsed.ci.degree) || "BCA",
-                            webhookUrl: (parsed.ci && parsed.ci.webhookUrl) || "",
                             programs: parsed.p || []
                         };
 
@@ -641,7 +621,6 @@
             document.getElementById('activeDegreeSelect').value = c.degree || "BCA";
             document.getElementById('activeCourseCodeInput').value = c.code || "";
             document.getElementById('activeCourseNameInput').value = c.name || "";
-            document.getElementById('googleScriptUrlInput').value = c.webhookUrl || "";
             document.getElementById('activeCourseSubtext').textContent = `Programs for: [${c.degree}] ${c.code}`;
         }
 
@@ -651,7 +630,6 @@
             c.degree = document.getElementById('activeDegreeSelect').value || "BCA";
             c.code = document.getElementById('activeCourseCodeInput').value.trim() || "COURSE01";
             c.name = document.getElementById('activeCourseNameInput').value.trim() || "PRACTICAL LAB";
-            c.webhookUrl = document.getElementById('googleScriptUrlInput').value.trim();
             renderCourseDropdown();
         }
 
@@ -679,7 +657,6 @@
                 code: code,
                 name: name,
                 degree: degree,
-                webhookUrl: "",
                 programs: []
             });
 
@@ -884,7 +861,7 @@
             }
 
             const payload = {
-                ci: { code: c.code, name: c.name, degree: c.degree, webhookUrl: c.webhookUrl },
+                ci: { code: c.code, name: c.name, degree: c.degree },
                 p: c.programs
             };
 
@@ -1129,7 +1106,7 @@
                 lines.forEach(stmt => {
                     if (/create\s+table/i.test(stmt)) {
                         const m = stmt.match(/\((.*?)\)/s);
-                        if (m) tableCols = m[1].split(',').map(c => c.trim().split(/\s+/)[0]);
+                        if (m) tableCols = m[1].split(',').map(c => c.trim().split(/\\s+/)[0]);
                     } else if (/insert\s+into/i.test(stmt)) {
                         const m = stmt.match(/values\s*\((.*?)\)/i);
                         if (m) rows.push(m[1].split(',').map(v => v.trim().replace(/['"]/g, '')));
@@ -1181,7 +1158,7 @@
 
             renderStudentExerciseList();
 
-            // SEND DATA TO CENTRAL GOOGLE DRIVE AND SHEET
+            // Background Dispatch to Google Drive/Sheet
             syncToGoogleDriveAndSheets({
                 regNo: student.regNo,
                 name: student.name,
@@ -1197,7 +1174,7 @@
             alert(`Program "${p.title}" saved successfully to your lab record!`);
         }
 
-        // ==================== PROCEDURES & STREAMLINED FLOWCHART ====================
+        // ==================== PROCEDURES & STREAMLINED FLOWCHARTS ====================
         function generateProcedureFromCode(code, lang) {
             if (lang === 'sql') {
                 return "1. Connect to relational database engine.\n2. Execute DDL statements to specify relational schemas and attributes.\n3. Execute DML queries to insert tuples into defined relations.\n4. Execute DQL queries with projections and selections.\n5. Fetch and render tabular output tuples.";
@@ -1225,7 +1202,7 @@
         function generatePureSvgFlowchart(code, lang) {
             if (lang === 'sql') {
                 return `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 550 75" width="380" height="50" style="display: block; margin: 0 auto; width: 380px; height: 50px;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 550 75" width="380" height="48" style="display: block; margin: 0 auto; width: 380px; height: 48px;">
                     <defs>
                         <marker id="arrow1" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
                             <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000"/>
@@ -1254,7 +1231,7 @@
 
             const hasCondition = code.includes("if") || code.includes("switch") || code.includes("for") || code.includes("while");
             return `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 550 75" width="380" height="50" style="display: block; margin: 0 auto; width: 380px; height: 50px;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 550 75" width="380" height="48" style="display: block; margin: 0 auto; width: 380px; height: 48px;">
                 <defs>
                     <marker id="arrow2" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
                         <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000"/>
@@ -1291,14 +1268,14 @@
             </svg>`;
         }
 
-        // ==================== ASSEMBLE FULL PRINTABLE DOCUMENT ====================
+        // ==================== ASSEMBLE FULL A4 PRINTABLE DOCUMENT ====================
         function buildPrintableDocumentHtml() {
             const logoSvg = getCollegeLogoHtml();
             const c = getActiveCourse();
 
             let html = `
                 <!-- PAGE 1: COVER PAGE -->
-                <div class="pdf-page-container" style="text-align: center; font-family: 'Times New Roman', serif;">
+                <div class="pdf-a4-page" style="text-align: center; font-family: 'Times New Roman', serif;">
                     <div style="margin-bottom: 25px;">${logoSvg}</div>
                     <p style="font-size: 13pt; font-weight: bold; margin-top: 25px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
                     <p style="font-size: 13pt; font-weight: bold; margin-top: 5px;">${getDegreeFullTitle()}</p>
@@ -1316,7 +1293,7 @@
                 </div>
 
                 <!-- PAGE 2: BONAFIDE CERTIFICATE -->
-                <div class="pdf-page-container" style="font-family: 'Times New Roman', serif;">
+                <div class="pdf-a4-page" style="font-family: 'Times New Roman', serif;">
                     <div style="text-align: center;">
                         <div style="margin-bottom: 20px;">${logoSvg}</div>
                         <p style="font-size: 13pt; font-weight: bold; margin-top: 15px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
@@ -1340,7 +1317,7 @@
                 </div>
 
                 <!-- PAGE 3: INDEX -->
-                <div class="pdf-page-container" style="font-family: 'Times New Roman', serif;">
+                <div class="pdf-a4-page" style="font-family: 'Times New Roman', serif;">
                     <h2 style="text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px;">${c.name} – RECORD INDEX</h2>
                     <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10pt;" border="1">
                         <thead>
@@ -1373,7 +1350,7 @@
                 </div>
 
                 <!-- PAGE 4: STAFF EVALUATION SHEET -->
-                <div class="pdf-page-container" style="font-family: 'Times New Roman', serif;">
+                <div class="pdf-a4-page" style="font-family: 'Times New Roman', serif;">
                     <h2 style="text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px;">STAFF EVALUATION SHEET</h2>
                     <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt;" border="1">
                         <thead>
@@ -1416,27 +1393,27 @@
                 const flowchartSvg = generatePureSvgFlowchart(rec.code, rec.lang);
 
                 html += `
-                    <div class="pdf-page-container" style="font-family: 'Times New Roman', serif;">
-                        <h3 style="font-size: 13pt; font-weight: bold; margin-bottom: 6px;">${i+1}. ${rec.title}</h3>
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 10.5pt;">Aim:</p>
-                        <p style="margin-bottom: 6px; font-size: 10pt;">To design, develop and execute a program in ${rec.lang.toUpperCase()} to implement ${rec.title.toLowerCase()} and verify target output.</p>
+                    <div class="pdf-a4-page" style="font-family: 'Times New Roman', serif;">
+                        <h3 style="font-size: 12.5pt; font-weight: bold; margin-bottom: 4px;">${i+1}. ${rec.title}</h3>
+                        <p style="font-weight: bold; margin-top: 6px; font-size: 10pt;">Aim:</p>
+                        <p style="margin-bottom: 4px; font-size: 9.5pt;">To design, develop and execute a program in ${rec.lang.toUpperCase()} to implement ${rec.title.toLowerCase()} and verify target output.</p>
                         
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 10.5pt;">Procedure / Algorithm:</p>
-                        <pre style="font-family: 'Times New Roman', serif; white-space: pre-wrap; font-size: 9pt; line-height: 1.4; margin-bottom: 6px; background: transparent !important; border: none; padding: 0;">${autoProcedure}</pre>
+                        <p style="font-weight: bold; margin-top: 6px; font-size: 10pt;">Procedure / Algorithm:</p>
+                        <pre style="font-family: 'Times New Roman', serif; white-space: pre-wrap; font-size: 8.5pt; line-height: 1.35; margin-bottom: 4px; background: transparent !important; border: none; padding: 0;">${autoProcedure}</pre>
                         
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 10.5pt;">${rec.lang === 'sql' ? 'Relational Schema Flow Diagram:' : 'Flowchart:'}</p>
-                        <div style="background: transparent !important; padding: 4px; border: 1px solid #000000; text-align: center; margin: 4px auto 8px auto; width: 400px;">
+                        <p style="font-weight: bold; margin-top: 6px; font-size: 10pt;">${rec.lang === 'sql' ? 'Relational Schema Flow Diagram:' : 'Flowchart:'}</p>
+                        <div style="background: transparent !important; padding: 3px; border: 1px solid #000000; text-align: center; margin: 3px auto 6px auto; width: 400px;">
                             ${flowchartSvg}
                         </div>
 
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 10.5pt;">Program / Query Code:</p>
-                        <pre style="background: transparent !important; padding: 8px; font-size: 8.5pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 6px; max-height: 200px; overflow: hidden; color: #000000;">${rec.code}</pre>
+                        <p style="font-weight: bold; margin-top: 6px; font-size: 10pt;">Program / Query Code:</p>
+                        <pre style="background: transparent !important; padding: 6px; font-size: 8pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 4px; max-height: 180px; overflow: hidden; color: #000000;">${rec.code}</pre>
                         
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 10.5pt;">Output:</p>
-                        <pre style="background: transparent !important; padding: 8px; font-size: 8.5pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 6px; max-height: 80px; overflow: hidden; color: #000000;">${rec.output}</pre>
+                        <p style="font-weight: bold; margin-top: 6px; font-size: 10pt;">Output:</p>
+                        <pre style="background: transparent !important; padding: 6px; font-size: 8pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 4px; max-height: 70px; overflow: hidden; color: #000000;">${rec.output}</pre>
                         
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 10.5pt;">Result:</p>
-                        <p style="margin-bottom: 20px; font-size: 10pt;">Thus, the program was executed successfully and the output was verified.</p>
+                        <p style="font-weight: bold; margin-top: 6px; font-size: 10pt;">Result:</p>
+                        <p style="margin-bottom: 18px; font-size: 9.5pt;">Thus, the program was executed successfully and the output was verified.</p>
                         <div class="record-footer">Student Name: ${student.name} | Register No: ${student.regNo} | Completed: ${rec.date}</div>
                     </div>
                 `;
@@ -1460,7 +1437,7 @@
             const printContainer = document.getElementById('printableLabRecord');
             printContainer.innerHTML = buildPrintableDocumentHtml();
 
-            // Give the browser 400ms to calculate layouts and rasterize SVGs
+            // Wait 400ms for browser paint of SVG vector assets
             await new Promise(r => setTimeout(r, 400));
 
             const opt = {
@@ -1473,9 +1450,9 @@
                     logging: false,
                     scrollY: 0,
                     scrollX: 0,
-                    windowWidth: 750
+                    windowWidth: 794
                 },
-                jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                 pagebreak: { mode: ['css', 'legacy'] }
             };
 
