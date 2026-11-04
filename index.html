@@ -72,37 +72,41 @@
         .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 15px; }
         .modal-content { background: #fff; border-radius: 12px; max-width: 480px; width: 100%; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
 
-        /* STRICT PDF STYLING - FULLY VISIBLE TO HTML2CANVAS WITH ZERO OFFSET */
-        #printableLabRecord {
-            width: 720px !important;
-            margin: 0 auto !important;
-            background: #ffffff !important;
-            color: #000000 !important;
-            box-sizing: border-box !important;
+        /* EXACT A4 PAGE STRUCTURE (794px width = standard A4 at 96 DPI) */
+        #pdfMountContainer {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 794px;
+            background: #ffffff;
+            z-index: -9999;
+            opacity: 0;
+            pointer-events: none;
         }
 
         .pdf-a4-page {
-            width: 720px !important;
-            min-height: 1000px !important;
-            padding: 20px 25px 25px 25px !important;
-            margin: 0 auto !important;
+            width: 794px !important;
+            height: 1122px !important;
+            max-height: 1122px !important;
+            padding: 45px 50px 40px 50px !important;
             background: #ffffff !important;
             box-sizing: border-box !important;
             position: relative !important;
+            overflow: hidden !important;
             page-break-after: always !important;
             break-after: page !important;
         }
 
         .record-footer {
             position: absolute;
-            bottom: 20px;
-            left: 25px;
-            right: 25px;
+            bottom: 25px;
+            left: 50px;
+            right: 50px;
             text-align: center;
-            font-size: 9pt;
+            font-size: 9.5pt;
             font-weight: bold;
             border-top: 1px solid #000;
-            padding-top: 4px;
+            padding-top: 5px;
         }
     </style>
 </head>
@@ -110,6 +114,7 @@
 
     <!-- ==================== FACULTY ADMIN WORKSPACE ==================== -->
     <div id="adminPortalView" class="app-container">
+        <!-- TOP NAV -->
         <header class="pro-card flex justify-between items-center" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: #fff;">
             <div>
                 <div class="flex items-center gap-2">
@@ -128,6 +133,7 @@
             </div>
         </header>
 
+        <!-- GENERATED LINK ALERT BANNER -->
         <div id="generatedLinkBanner" class="hidden pro-card" style="background: #ecfdf5; border-color: #6ee7b7;">
             <p style="font-size: 13px; font-weight: 700; color: #065f46; margin-bottom: 8px;">
                 <i class="fa-solid fa-circle-check"></i> STUDENT PRACTICE URL READY:
@@ -140,7 +146,7 @@
             </div>
         </div>
 
-        <!-- COURSE MANAGEMENT CARD (CLEAN: NO GOOGLE DRIVE TABS) -->
+        <!-- COURSE MANAGEMENT CARD -->
         <div class="pro-card">
             <div class="flex justify-between items-center" style="margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
                 <h2 style="font-size: 15px; font-weight: 700; color: #1e293b;">
@@ -391,13 +397,13 @@
         </div>
     </div>
 
-    <!-- ==================== PRINTABLE CONTAINER (ALWAYS ACCESSIBLE TO HTML2CANVAS) ==================== -->
-    <div id="pdfMountPoint" style="display: none;">
+    <!-- ==================== FIXED ZERO-OFFSET PDF MOUNT CONTAINER ==================== -->
+    <div id="pdfMountContainer">
         <div id="printableLabRecord"></div>
     </div>
 
     <script>
-        // Set this to your deployed Google Apps Script URL to sync data to Drive/Sheets
+        // Set this to your deployed Google Apps Script URL if you wish to sync records to Drive
         const CENTRAL_GOOGLE_SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";
 
         function safeCompress(dataObj) {
@@ -468,14 +474,14 @@
             }
         }
 
-        // ==================== EXACT HINDUSTAN UNIVERSITY EMBLEM & TYPOGRAPHY ====================
+        // ==================== EXACT HINDUSTAN UNIVERSITY LOGO (PERFECTLY CENTERED) ====================
         function getCollegeLogoHtml() {
             return `
-            <div style="text-align: center; margin: 0 auto 10px auto; width: 100%;">
-                <table style="width: auto; margin: 0 auto; border-collapse: collapse; border: none;">
+            <div style="width: 100%; text-align: center; margin: 0 auto 12px auto;">
+                <table style="margin: 0 auto; border-collapse: collapse; border: none; text-align: left;">
                     <tr>
                         <td style="vertical-align: middle; padding-right: 12px; border: none;">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="46" height="46">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="48" height="48">
                                 <g transform="translate(60, 60)">
                                     <rect x="-8" y="-56" width="16" height="112" rx="3" fill="#f97316"/>
                                     <rect x="-8" y="-56" width="16" height="112" rx="3" fill="#f97316" transform="rotate(30)"/>
@@ -492,7 +498,7 @@
                                 </g>
                             </svg>
                         </td>
-                        <td style="vertical-align: middle; text-align: left; border: none;">
+                        <td style="vertical-align: middle; border: none;">
                             <div style="font-family: 'Arial Black', Arial, sans-serif; font-size: 26px; font-weight: 900; color: #000000; letter-spacing: 0.5px; line-height: 1;">HINDUSTAN</div>
                             <div style="font-family: 'Arial', sans-serif; font-size: 10px; font-weight: 800; color: #000000; letter-spacing: 0.8px; margin-top: 3px;">INSTITUTE OF TECHNOLOGY &amp; SCIENCE</div>
                             <div style="font-family: 'Arial', sans-serif; font-size: 9px; font-weight: 700; color: #000000; letter-spacing: 0.5px; margin-top: 2px;">(DEEMED TO BE UNIVERSITY)</div>
@@ -1198,36 +1204,36 @@
         function generatePureSvgFlowchart(code, lang) {
             if (lang === 'sql') {
                 return `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 65" width="480" height="42" style="display: block; margin: 0 auto;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 65" width="540" height="42" style="display: block; margin: 0 auto; max-width: 100%;">
                     <defs>
                         <marker id="arrow1" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
                             <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000"/>
                         </marker>
                     </defs>
-                    <rect x="5" y="12" width="120" height="40" rx="3" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
-                    <rect x="5" y="12" width="120" height="14" rx="3" fill="#f1f5f9" stroke="#000000" stroke-width="1.2"/>
-                    <text x="65" y="23" font-family="'Arial', sans-serif" font-size="8" font-weight="bold" text-anchor="middle">RELATION SCHEMA</text>
-                    <text x="65" y="42" font-family="'Courier New', monospace" font-size="7.5" text-anchor="middle">[PK] Record_ID, Data</text>
-                    <line x1="125" y1="32" x2="155" y2="32" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow1)"/>
+                    <rect x="5" y="12" width="125" height="40" rx="3" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
+                    <rect x="5" y="12" width="125" height="14" rx="3" fill="#f1f5f9" stroke="#000000" stroke-width="1.2"/>
+                    <text x="67" y="23" font-family="'Arial', sans-serif" font-size="8" font-weight="bold" text-anchor="middle">RELATION SCHEMA</text>
+                    <text x="67" y="42" font-family="'Courier New', monospace" font-size="7.5" text-anchor="middle">[PK] Record_ID, Data</text>
+                    <line x1="130" y1="32" x2="160" y2="32" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow1)"/>
 
-                    <rect x="160" y="14" width="115" height="36" rx="3" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
-                    <text x="217" y="30" font-family="'Arial', sans-serif" font-size="8.5" font-weight="bold" text-anchor="middle">SQL DDL / DML</text>
-                    <text x="217" y="42" font-family="'Arial', sans-serif" font-size="7.5" text-anchor="middle">Execute Queries</text>
-                    <line x1="275" y1="32" x2="305" y2="32" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow1)"/>
+                    <rect x="165" y="14" width="120" height="36" rx="3" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
+                    <text x="225" y="30" font-family="'Arial', sans-serif" font-size="8.5" font-weight="bold" text-anchor="middle">SQL DDL / DML</text>
+                    <text x="225" y="42" font-family="'Arial', sans-serif" font-size="7.5" text-anchor="middle">Execute Queries</text>
+                    <line x1="285" y1="32" x2="315" y2="32" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow1)"/>
 
-                    <polygon points="315,14 420,14 405,50 300,50" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
-                    <text x="360" y="30" font-family="'Arial', sans-serif" font-size="8.5" font-weight="bold" text-anchor="middle">QUERY PROJECTION</text>
-                    <text x="360" y="42" font-family="'Arial', sans-serif" font-size="7.5" text-anchor="middle">Fetch Output Tuples</text>
-                    <line x1="415" y1="32" x2="445" y2="32" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow1)"/>
+                    <polygon points="325,14 435,14 420,50 310,50" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
+                    <text x="372" y="30" font-family="'Arial', sans-serif" font-size="8.5" font-weight="bold" text-anchor="middle">QUERY PROJECTION</text>
+                    <text x="372" y="42" font-family="'Arial', sans-serif" font-size="7.5" text-anchor="middle">Fetch Output Tuples</text>
+                    <line x1="430" y1="32" x2="465" y2="32" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow1)"/>
 
-                    <rect x="450" y="18" width="65" height="28" rx="14" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
-                    <text x="482" y="35" font-family="'Arial', sans-serif" font-size="9" font-weight="bold" text-anchor="middle">STOP</text>
+                    <rect x="470" y="18" width="65" height="28" rx="14" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
+                    <text x="502" y="35" font-family="'Arial', sans-serif" font-size="9" font-weight="bold" text-anchor="middle">STOP</text>
                 </svg>`;
             }
 
             const hasCondition = code.includes("if") || code.includes("switch") || code.includes("for") || code.includes("while");
             return `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 65" width="480" height="42" style="display: block; margin: 0 auto;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 65" width="540" height="42" style="display: block; margin: 0 auto; max-width: 100%;">
                 <defs>
                     <marker id="arrow2" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
                         <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000"/>
@@ -1237,30 +1243,30 @@
                 <text x="32" y="35" font-family="'Arial', sans-serif" font-size="9" font-weight="bold" text-anchor="middle">START</text>
                 <line x1="60" y1="32" x2="90" y2="32" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow2)"/>
 
-                <polygon points="100,14 195,14 180,50 85,50" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
-                <text x="140" y="30" font-family="'Arial', sans-serif" font-size="8.5" font-weight="bold" text-anchor="middle">INPUT / INIT</text>
-                <text x="140" y="42" font-family="'Arial', sans-serif" font-size="7.5" text-anchor="middle">Variables &amp; Streams</text>
-                <line x1="190" y1="32" x2="220" y2="32" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow2)"/>
+                <polygon points="100,14 200,14 185,50 85,50" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
+                <text x="142" y="30" font-family="'Arial', sans-serif" font-size="8.5" font-weight="bold" text-anchor="middle">INPUT / INIT</text>
+                <text x="142" y="42" font-family="'Arial', sans-serif" font-size="7.5" text-anchor="middle">Variables &amp; Streams</text>
+                <line x1="195" y1="32" x2="225" y2="32" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow2)"/>
 
                 ${hasCondition ? `
-                <polygon points="265,12 310,32 265,52 220,32" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
-                <text x="265" y="31" font-family="'Arial', sans-serif" font-size="7.5" font-weight="bold" text-anchor="middle">CONDITION</text>
-                <text x="265" y="41" font-family="'Arial', sans-serif" font-size="7" text-anchor="middle">EVALUATE</text>
-                <line x1="310" y1="32" x2="340" y2="32" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow2)"/>
+                <polygon points="275,12 320,32 275,52 230,32" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
+                <text x="275" y="31" font-family="'Arial', sans-serif" font-size="7.5" font-weight="bold" text-anchor="middle">CONDITION</text>
+                <text x="275" y="41" font-family="'Arial', sans-serif" font-size="7" text-anchor="middle">EVALUATE</text>
+                <line x1="320" y1="32" x2="350" y2="32" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow2)"/>
                 ` : `
-                <rect x="225" y="14" width="85" height="36" rx="3" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
-                <text x="267" y="30" font-family="'Arial', sans-serif" font-size="8.5" font-weight="bold" text-anchor="middle">PROCESS</text>
-                <text x="267" y="42" font-family="'Arial', sans-serif" font-size="7.5" text-anchor="middle">Execute Logic</text>
-                <line x1="310" y1="32" x2="340" y2="32" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow2)"/>
+                <rect x="230" y="14" width="90" height="36" rx="3" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
+                <text x="275" y="30" font-family="'Arial', sans-serif" font-size="8.5" font-weight="bold" text-anchor="middle">PROCESS</text>
+                <text x="275" y="42" font-family="'Arial', sans-serif" font-size="7.5" text-anchor="middle">Execute Logic</text>
+                <line x1="320" y1="32" x2="350" y2="32" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow2)"/>
                 `}
 
-                <polygon points="350,14 445,14 430,50 335,50" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
-                <text x="390" y="30" font-family="'Arial', sans-serif" font-size="8.5" font-weight="bold" text-anchor="middle">OUTPUT</text>
-                <text x="390" y="42" font-family="'Arial', sans-serif" font-size="7.5" text-anchor="middle">Display Result</text>
-                <line x1="440" y1="32" x2="465" y2="32" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow2)"/>
+                <polygon points="360,14 460,14 445,50 345,50" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
+                <text x="402" y="30" font-family="'Arial', sans-serif" font-size="8.5" font-weight="bold" text-anchor="middle">OUTPUT</text>
+                <text x="402" y="42" font-family="'Arial', sans-serif" font-size="7.5" text-anchor="middle">Display Result</text>
+                <line x1="455" y1="32" x2="480" y2="32" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow2)"/>
 
-                <rect x="468" y="18" width="50" height="28" rx="14" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
-                <text x="493" y="35" font-family="'Arial', sans-serif" font-size="9" font-weight="bold" text-anchor="middle">STOP</text>
+                <rect x="483" y="18" width="52" height="28" rx="14" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
+                <text x="509" y="35" font-family="'Arial', sans-serif" font-size="9" font-weight="bold" text-anchor="middle">STOP</text>
             </svg>`;
         }
 
@@ -1272,16 +1278,16 @@
             let html = `
                 <!-- PAGE 1: COVER PAGE -->
                 <div class="pdf-a4-page" style="text-align: center; font-family: 'Times New Roman', serif;">
-                    <div style="margin-top: 20px; margin-bottom: 25px;">${logoSvg}</div>
+                    <div style="margin-top: 15px; margin-bottom: 25px;">${logoSvg}</div>
                     
-                    <p style="font-size: 14pt; font-weight: bold; margin-top: 35px; letter-spacing: 0.5px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
+                    <p style="font-size: 14pt; font-weight: bold; margin-top: 40px; letter-spacing: 0.5px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
                     <p style="font-size: 14pt; font-weight: bold; margin-top: 6px; letter-spacing: 0.5px;">${getDegreeFullTitle()}</p>
 
-                    <p style="font-size: 12pt; font-weight: bold; margin-top: 35px;">(SEMESTER – II)</p>
-                    <h2 style="font-size: 16pt; font-weight: bold; margin-top: 15px;">${c.code} – ${c.name}</h2>
+                    <p style="font-size: 12pt; font-weight: bold; margin-top: 40px;">(SEMESTER – II)</p>
+                    <h2 style="font-size: 16pt; font-weight: bold; margin-top: 15px; padding: 0 20px;">${c.code} – ${c.name}</h2>
                     <p style="font-size: 13pt; font-weight: bold; margin-top: 10px;">Integrated Practical Lab Record</p>
 
-                    <div style="border: 2px solid #000; padding: 22px 28px; margin: 80px auto 0 auto; width: 440px; text-align: left; line-height: 2.2; font-size: 12pt; font-weight: bold;">
+                    <div style="border: 2px solid #000; padding: 24px 32px; margin: 90px auto 0 auto; width: 460px; text-align: left; line-height: 2.2; font-size: 12.5pt; font-weight: bold;">
                         <p style="margin:0;">Name &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${student.name}</p>
                         <p style="margin:0;">Register No &nbsp;&nbsp;&nbsp;: ${student.regNo}</p>
                         <p style="margin:0;">Roll No &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${student.rollNo || 'N/A'}</p>
@@ -1292,7 +1298,7 @@
 
                 <!-- PAGE 2: BONAFIDE CERTIFICATE -->
                 <div class="pdf-a4-page" style="font-family: 'Times New Roman', serif;">
-                    <div style="text-align: center; margin-top: 20px;">
+                    <div style="text-align: center; margin-top: 15px;">
                         <div style="margin-bottom: 20px;">${logoSvg}</div>
                         <p style="font-size: 14pt; font-weight: bold; margin-top: 25px; letter-spacing: 0.5px;">DEPARTMENT OF COMPUTER APPLICATIONS</p>
                         <p style="font-size: 14pt; font-weight: bold; margin-top: 6px; letter-spacing: 0.5px;">${getDegreeFullTitle()}</p>
@@ -1301,31 +1307,31 @@
                         <h2 style="font-size: 18pt; font-weight: bold; margin-top: 35px; margin-bottom: 25px; text-decoration: underline;">Bonafide Certificate</h2>
                     </div>
 
-                    <p style="font-size: 12.5pt; line-height: 2.2; text-align: justify; margin: 40px auto 0 auto; width: 620px;">
+                    <p style="font-size: 13pt; line-height: 2.3; text-align: justify; margin: 45px auto 0 auto; width: 100%;">
                         This is to certify that this is a bonafide record of work done by <strong>${student.name}</strong> 
                         (Register Number: <strong>${student.regNo}</strong>) of <strong>${getDegreeShort()}</strong> class, 
                         submitted for the End Semester Practical Examination held on ____________________ 
                         in <strong>${c.code} – ${c.name}</strong> during the academic year <strong>2024 – 2025</strong>.
                     </p>
                     
-                    <div style="margin-top: 180px; width: 100%; display: flex; justify-content: space-between; text-align: center; font-weight: bold; font-size: 11.5pt;">
-                        <div style="width: 160px;"><p style="border-top: 1.5px solid #000; padding-top: 6px; margin: 0;">Staff In-Charge</p></div>
-                        <div style="width: 160px;"><p style="border-top: 1.5px solid #000; padding-top: 6px; margin: 0;">Internal Examiner</p></div>
-                        <div style="width: 160px;"><p style="border-top: 1.5px solid #000; padding-top: 6px; margin: 0;">External Examiner</p></div>
+                    <div style="margin-top: 200px; width: 100%; display: flex; justify-content: space-between; text-align: center; font-weight: bold; font-size: 11.5pt;">
+                        <div style="width: 170px;"><p style="border-top: 1.5px solid #000; padding-top: 6px; margin: 0;">Staff In-Charge</p></div>
+                        <div style="width: 170px;"><p style="border-top: 1.5px solid #000; padding-top: 6px; margin: 0;">Internal Examiner</p></div>
+                        <div style="width: 170px;"><p style="border-top: 1.5px solid #000; padding-top: 6px; margin: 0;">External Examiner</p></div>
                     </div>
                 </div>
 
                 <!-- PAGE 3: INDEX -->
                 <div class="pdf-a4-page" style="font-family: 'Times New Roman', serif;">
-                    <h2 style="text-align: center; font-size: 14pt; font-weight: bold; margin-top: 20px; margin-bottom: 25px;">${c.name} – RECORD INDEX</h2>
+                    <h2 style="text-align: center; font-size: 14pt; font-weight: bold; margin-top: 15px; margin-bottom: 25px;">${c.name} – RECORD INDEX</h2>
                     <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10pt;" border="1">
                         <thead>
                             <tr style="background: #f1f5f9;">
-                                <th style="padding: 8px; width: 8%;">S.NO</th>
-                                <th style="padding: 8px; width: 16%;">DATE</th>
-                                <th style="padding: 8px; text-align: left;">NAME OF THE EXPERIMENT</th>
-                                <th style="padding: 8px; width: 14%;">PAGE No.</th>
-                                <th style="padding: 8px; width: 22%;">SIGNATURE</th>
+                                <th style="padding: 9px; width: 8%; text-align: center;">S.NO</th>
+                                <th style="padding: 9px; width: 16%; text-align: center;">DATE</th>
+                                <th style="padding: 9px; text-align: left;">NAME OF THE EXPERIMENT</th>
+                                <th style="padding: 9px; width: 14%; text-align: center;">PAGE No.</th>
+                                <th style="padding: 9px; width: 22%; text-align: center;">SIGNATURE</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1334,11 +1340,11 @@
             savedRecords.forEach((rec, i) => {
                 html += `
                     <tr>
-                        <td style="padding: 8px; text-align: center;">${i + 1}</td>
-                        <td style="padding: 8px; text-align: center;">${rec.date}</td>
-                        <td style="padding: 8px; text-align: left;">${rec.title} [${rec.lang.toUpperCase()}]</td>
-                        <td style="padding: 8px; text-align: center;">${i + 5}</td>
-                        <td style="padding: 8px;"></td>
+                        <td style="padding: 9px; text-align: center;">${i + 1}</td>
+                        <td style="padding: 9px; text-align: center;">${rec.date}</td>
+                        <td style="padding: 9px; text-align: left;">${rec.title} [${rec.lang.toUpperCase()}]</td>
+                        <td style="padding: 9px; text-align: center;">${i + 5}</td>
+                        <td style="padding: 9px;"></td>
                     </tr>
                 `;
             });
@@ -1350,17 +1356,17 @@
 
                 <!-- PAGE 4: STAFF EVALUATION SHEET -->
                 <div class="pdf-a4-page" style="font-family: 'Times New Roman', serif;">
-                    <h2 style="text-align: center; font-size: 14pt; font-weight: bold; margin-top: 20px; margin-bottom: 25px;">STAFF EVALUATION SHEET</h2>
+                    <h2 style="text-align: center; font-size: 14pt; font-weight: bold; margin-top: 15px; margin-bottom: 25px;">STAFF EVALUATION SHEET</h2>
                     <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9.5pt;" border="1">
                         <thead>
                             <tr style="background: #f1f5f9;">
-                                <th style="padding: 7px; width: 8%;">S.NO</th>
-                                <th style="padding: 7px; text-align: left;">PROGRAM TITLE</th>
-                                <th style="padding: 7px; width: 12%;">AIM (2)</th>
-                                <th style="padding: 7px; width: 14%;">ALGORITHM (2)</th>
-                                <th style="padding: 7px; width: 14%;">PROGRAM (4)</th>
-                                <th style="padding: 7px; width: 12%;">OUTPUT (2)</th>
-                                <th style="padding: 7px; width: 12%;">TOTAL (10)</th>
+                                <th style="padding: 8px; width: 8%; text-align: center;">S.NO</th>
+                                <th style="padding: 8px; text-align: left;">PROGRAM TITLE</th>
+                                <th style="padding: 8px; width: 12%; text-align: center;">AIM (2)</th>
+                                <th style="padding: 8px; width: 14%; text-align: center;">ALGORITHM (2)</th>
+                                <th style="padding: 8px; width: 14%; text-align: center;">PROGRAM (4)</th>
+                                <th style="padding: 8px; width: 12%; text-align: center;">OUTPUT (2)</th>
+                                <th style="padding: 8px; width: 12%; text-align: center;">TOTAL (10)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1369,13 +1375,13 @@
             savedRecords.forEach((rec, i) => {
                 html += `
                     <tr>
-                        <td style="padding: 7px; text-align: center;">${i + 1}</td>
-                        <td style="padding: 7px; text-align: left;">${rec.title}</td>
-                        <td style="padding: 7px;"></td>
-                        <td style="padding: 7px;"></td>
-                        <td style="padding: 7px;"></td>
-                        <td style="padding: 7px;"></td>
-                        <td style="padding: 7px;"></td>
+                        <td style="padding: 8px; text-align: center;">${i + 1}</td>
+                        <td style="padding: 8px; text-align: left;">${rec.title}</td>
+                        <td style="padding: 8px;"></td>
+                        <td style="padding: 8px;"></td>
+                        <td style="padding: 8px;"></td>
+                        <td style="padding: 8px;"></td>
+                        <td style="padding: 8px;"></td>
                     </tr>
                 `;
             });
@@ -1386,7 +1392,7 @@
                 </div>
             `;
 
-            // PAGES 5+: EXPERIMENTS (GUARANTEED SINGLE PAGE PER EXERCISE)
+            // PAGES 5+: EXPERIMENTS
             savedRecords.forEach((rec, i) => {
                 const autoProcedure = generateProcedureFromCode(rec.code, rec.lang);
                 const flowchartSvg = generatePureSvgFlowchart(rec.code, rec.lang);
@@ -1395,24 +1401,24 @@
                     <div class="pdf-a4-page" style="font-family: 'Times New Roman', serif;">
                         <h3 style="font-size: 13pt; font-weight: bold; margin-bottom: 8px;">${i+1}. ${rec.title}</h3>
                         
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 11pt;">Aim:</p>
+                        <p style="font-weight: bold; margin-top: 10px; font-size: 11pt;">Aim:</p>
                         <p style="margin-bottom: 6px; font-size: 10.5pt;">To design, develop and execute a program in ${rec.lang.toUpperCase()} to implement ${rec.title.toLowerCase()} and verify target output.</p>
                         
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 11pt;">Procedure / Algorithm:</p>
+                        <p style="font-weight: bold; margin-top: 10px; font-size: 11pt;">Procedure / Algorithm:</p>
                         <pre style="font-family: 'Times New Roman', serif; white-space: pre-wrap; font-size: 9.5pt; line-height: 1.4; margin-bottom: 8px; background: transparent !important; border: none; padding: 0;">${autoProcedure}</pre>
                         
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 11pt;">${rec.lang === 'sql' ? 'Relational Schema Flow Diagram:' : 'Flowchart:'}</p>
-                        <div style="background: transparent !important; padding: 6px 4px; border: 1px solid #000000; text-align: center; margin: 4px auto 8px auto; width: 100%;">
+                        <p style="font-weight: bold; margin-top: 10px; font-size: 11pt;">${rec.lang === 'sql' ? 'Relational Schema Flow Diagram:' : 'Flowchart:'}</p>
+                        <div style="background: transparent !important; padding: 6px; border: 1px solid #000000; text-align: center; margin: 4px auto 10px auto; width: 100%;">
                             ${flowchartSvg}
                         </div>
 
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 11pt;">Program / Query Code:</p>
-                        <pre style="background: transparent !important; padding: 8px; font-size: 8.5pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 6px; max-height: 210px; overflow: hidden; color: #000000;">${rec.code}</pre>
+                        <p style="font-weight: bold; margin-top: 10px; font-size: 11pt;">Program / Query Code:</p>
+                        <pre style="background: transparent !important; padding: 8px 10px; font-size: 8.5pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 8px; max-height: 220px; overflow: hidden; color: #000000;">${rec.code}</pre>
                         
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 11pt;">Output:</p>
-                        <pre style="background: transparent !important; padding: 8px; font-size: 8.5pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 6px; max-height: 80px; overflow: hidden; color: #000000;">${rec.output}</pre>
+                        <p style="font-weight: bold; margin-top: 10px; font-size: 11pt;">Output:</p>
+                        <pre style="background: transparent !important; padding: 8px 10px; font-size: 8.5pt; border: 1px solid #000000; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; margin-bottom: 8px; max-height: 90px; overflow: hidden; color: #000000;">${rec.output}</pre>
                         
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 11pt;">Result:</p>
+                        <p style="font-weight: bold; margin-top: 10px; font-size: 11pt;">Result:</p>
                         <p style="margin-bottom: 25px; font-size: 10.5pt;">Thus, the program was executed successfully and the output was verified.</p>
                         
                         <div class="record-footer">Student Name: ${student.name} | Register No: ${student.regNo} | Completed: ${rec.date}</div>
@@ -1423,7 +1429,7 @@
             return html;
         }
 
-        // ==================== 100% PRECISE DIRECT PDF DOWNLOAD ====================
+        // ==================== 100% RELIABLE ZERO-OFFSET PDF DOWNLOAD ====================
         async function downloadDirectPDF() {
             if (savedRecords.length === 0) {
                 alert("Please save at least one completed program before downloading the record!");
@@ -1435,32 +1441,34 @@
             downloadBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating PDF...`;
 
             const c = getActiveCourse();
-            const mountPoint = document.getElementById('pdfMountPoint');
+            const mount = document.getElementById('pdfMountContainer');
             const printContainer = document.getElementById('printableLabRecord');
             
-            // Build and make container visible to html2canvas on-screen
             printContainer.innerHTML = buildPrintableDocumentHtml();
-            mountPoint.style.display = 'block';
+            
+            // Make visible to html2canvas at (0, 0)
+            mount.style.zIndex = "999999";
+            mount.style.opacity = "1";
 
-            // Ensure window is at top so canvas captures from (0,0)
-            window.scrollTo(0, 0);
-
-            // Wait 350ms for layout reflow and clean vector font rasterization
-            await new Promise(r => setTimeout(r, 350));
+            // Give browser 300ms for clean layout calculations
+            await new Promise(r => setTimeout(r, 300));
 
             const opt = {
-                margin: [0, 0, 0, 0],
+                margin: 0,
                 filename: `${student.regNo}_${c.code}_${getDegreeShort()}_LabRecord.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: {
                     scale: 2,
                     useCORS: true,
                     logging: false,
-                    scrollY: 0,
+                    x: 0,
+                    y: 0,
+                    width: 794,
                     scrollX: 0,
-                    windowWidth: 1024
+                    scrollY: 0,
+                    windowWidth: 794
                 },
-                jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
+                jsPDF: { unit: 'px', format: [794, 1122], orientation: 'portrait', hotfixes: ['px_scaling'] },
                 pagebreak: { mode: ['css', 'legacy'] }
             };
 
@@ -1471,7 +1479,8 @@
                 console.error("PDF generation error:", err);
                 alert("Error during PDF download: " + err.message);
             } finally {
-                mountPoint.style.display = 'none';
+                mount.style.zIndex = "-9999";
+                mount.style.opacity = "0";
                 printContainer.innerHTML = "";
                 downloadBtn.disabled = false;
                 downloadBtn.innerHTML = `<i class="fa-solid fa-file-arrow-down"></i> Download PDF`;
