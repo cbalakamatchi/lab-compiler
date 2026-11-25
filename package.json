@@ -1,15 +1,71 @@
-{
-  "name": "classroom-live-board",
-  "version": "1.0.0",
-  "description": "Real-time collaborative board for 50+ students with Google Drive logging",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "googleapis": "^144.0.0",
-    "socket.io": "^4.7.5"
+const { Server } = require('socket.io');
+
+let boardPosts = [];
+let connectedUsers = 0;
+const WEBHOOK_URL = process.env.GOOGLE_SHEET_WEBHOOK_URL;
+
+async function logToDrive(post) {
+  if (!WEBHOOK_URL) return;
+  try {
+    await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(post),
+      redirect: 'follow',
+    });
+  } catch (err) {
+    console.error('❌ Error logging to Google Sheet:', err.message);
   }
 }
+
+function attachLiveBoard(httpServer) {
+  const io = new Server(httpServer, {
+    path: '/board-socket',
+    cors: { origin: '*' },
+    pingTimeout: 60000,
+  });
+
+  io.on('connection', (socket) => {
+    connectedUsers++;
+    io.emit('user-count', connectedUsers);
+    socket.emit('initial-posts', boardPosts);
+
+    socket.on('new-post', async (data) => {
+      const cleanMessage = String(data.message || '').trim().slice(0, 500);
+      if (!cleanMessage) return;
+
+      const post = {
+        id: Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+        studentName: String(data.studentName || 'Anonymous').trim().slice(0, 40),
+        rollNo: String(data.rollNo || 'N/A').trim().slice(0, 20),
+        category: String(data.category || 'Idea').trim().slice(0, 20),
+        message: cleanMessage,
+        color: data.color || '#fef08a',
+        timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+      };
+
+      boardPosts.unshift(post);
+      if (boardPosts.length > 200) boardPosts.pop();
+
+      // Instant broadcast to all 50+ students
+      io.emit('broadcast-post', post);
+
+      // Save to your Google Drive Sheet
+      await logToDrive(post);
+    });
+
+    socket.on('clear-board', (adminPin) => {
+      if (adminPin === (process.env.ADMIN_PIN || '1234')) {
+        boardPosts = [];
+        io.emit('board-cleared');
+      }
+    });
+
+    socket.on('disconnect', () => {
+      connectedUsers = Math.max(0, connectedUsers - 1);
+      io.emit('user-count', connectedUsers);
+    });
+  });
+}
+
+module.exports = { attachLiveBoard };
